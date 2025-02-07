@@ -1,2 +1,0 @@
-# Jamming
-Various Jamming attacks
