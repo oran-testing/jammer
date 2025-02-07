@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "noise.h"
 #include "rf.h"
 
 int main(int argc, char *argv[]) {
