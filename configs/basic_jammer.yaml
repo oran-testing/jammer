@@ -1,4 +1,3 @@
----
 # The settings below are relevant for all jammer types
 # Choose the frequency range to operate in (1=2.4GHz, 2=5GHz) | default is 1
 band: 1
