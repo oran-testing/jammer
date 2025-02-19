@@ -23,9 +23,6 @@ else()
 endif()
 
 
-find_package(yaml-cpp REQUIRED)
-include_directories(${YAML_CPP_INCLUDE_DIRS})
-
 file(GLOB JAMMER_SRC src/*.cc)
 
 include_directories(hdr)
@@ -33,3 +30,8 @@ add_executable(jammer ${JAMMER_SRC})
 
 target_link_libraries(jammer ${UHD_LIBRARIES})
 
+install(
+  PROGRAMS
+  ${CMAKE_BINARY_DIR}/jammer
+  DESTINATION /usr/local/bin/
+)
