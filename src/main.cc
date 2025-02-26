@@ -26,10 +26,12 @@ struct all_args_t {
     bool write_csv;
 };
 
-// Function to parse YAML config into our struct
-all_args_t parseConfig(const std::string &filename) {
-    YAML::Node config = YAML::LoadFile(filename);
-    all_args_t args;
+// Function to parse YAML config into struct
+all_args_t parseConfig(const std::string &filename) { //change the filename to the real filename
+
+    YAML::Node config = YAML::LoadFile(filename); //change the filename to its real filename
+
+    all_args_t args; //an instance of struct
     args.amplitude = config["amplitude"].as<double>();
     args.initial_frequency = config["initial_frequency"].as<double>();
     args.frequency_change_rate = config["frequency_change_rate"].as<double>();
@@ -45,8 +47,10 @@ all_args_t parseConfig(const std::string &filename) {
 
 // Function to update config from command-line arguments
 // (simple parsing: expects "--key value")
+
 void overrideConfig(all_args_t &args, int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
+
         if (std::strcmp(argv[i], "--amplitude") == 0 && i + 1 < argc) {
             args.amplitude = std::atof(argv[++i]);
         } else if (std::strcmp(argv[i], "--initial_frequency") == 0 && i + 1 < argc) {
@@ -78,7 +82,7 @@ void overrideConfig(all_args_t &args, int argc, char* argv[]) {
 
 
 // Write IQ data as binary file (.fc32) with 32-bit float interleaved (real, imag)
-void writeIQBinary(const std::string &filename, const std::vector<std::complex<double>> &samples) {
+void writeIQBinary(const std::string &filename, const std::vector<std::complex<double>> &samples) { //Remember to change the filename to a real name 
     std::ofstream outfile(filename, std::ios::binary);
     if (!outfile) {
         std::cerr << "Error opening file for IQ binary output: " << filename << std::endl;

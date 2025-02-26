@@ -15,10 +15,17 @@ generateComplexSineWave(double amplitude, double initial_frequency,
 
     for (int i = 0; i < num_samples; ++i) {
         // Generate complex sample using polar coordinates
-        samples[i] = std::polar(amplitude, phase);
+        samples[i] = std::polar(amplitude, phase); 
+        //Computes z = amplitude * cos(phase) {real part} + amplitude * (i) sin(phase) {imaginary part
+        //Do note that imaginary part is the coff. of i so sin(phase)}
+        //If the case of converting to cartesian plane arises the angle (phase) can be found by
+        // arcsin(imaginary/amplitude) or arccos(real/amp.).
+
+
         
         // Update phase for next sample (correct frequency ramp integration)
-        phase += 2 * PI * current_frequency * delta_t; // 2pif = angular velocity, 2pif(deltat) = change in angle
+        phase += 2 * PI * current_frequency * delta_t; // 2pif = angular velocity, 2pif(deltat) = change in angle per sec * delta_t = 
+        // change in angle in delta_t time. 
         
         // Keep phase wrapped to [0, 2π) to prevent precision loss
         phase = fmod(phase, 2 * PI);
@@ -27,7 +34,7 @@ generateComplexSineWave(double amplitude, double initial_frequency,
       }
         
         // Update frequency for next sample
-        current_frequency += frequency_change_rate * delta_t; // updated
+        current_frequency += frequency_change_rate * delta_t; // updated the mistake
     }
 
     return samples;
