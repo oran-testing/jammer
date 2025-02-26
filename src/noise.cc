@@ -6,6 +6,7 @@ std::vector<std::complex<double>>
 generateComplexSineWave(double amplitude, double initial_frequency,
                         double frequency_change_rate, double initial_phase,
                         int num_samples, double sample_rate) {
+                          
   std::vector<std::complex<double>> samples(num_samples);
   const double delta_t =
       1.0 /
@@ -14,6 +15,7 @@ generateComplexSineWave(double amplitude, double initial_frequency,
   double phase = initial_phase;
 
     for (int i = 0; i < num_samples; ++i) {
+
         // Generate complex sample using polar coordinates
         samples[i] = std::polar(amplitude, phase); 
         //Computes z = amplitude * cos(phase) {real part} + amplitude * (i) sin(phase) {imaginary part
