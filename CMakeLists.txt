@@ -28,7 +28,7 @@ file(GLOB JAMMER_SRC src/*.cc)
 include_directories(hdr)
 add_executable(jammer ${JAMMER_SRC})
 
-target_link_libraries(jammer ${UHD_LIBRARIES})
+target_link_libraries(jammer ${UHD_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
 install(
   PROGRAMS
