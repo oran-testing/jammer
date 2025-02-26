@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <iostream>
 
+#include "args.h"
 #include "noise.h"
 #include "rf.h"
 #include <cmath>
@@ -8,85 +9,18 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <uhd/error.h>
+#include <uhd/stream.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <vector>
-#include <yaml-cpp/yaml.h>
 
-const double PI = std::acos(-1.0);
-
-// Struct to hold all configuration parameters
-struct all_args_t {
-  double amplitude;
-  double initial_frequency;
-  double frequency_change_rate;
-  double initial_phase;
-  int num_samples;
-  double sample_rate;
-  std::string output_iq_file;
-  std::string output_csv_file;
-  bool write_iq;
-  bool write_csv;
-};
-
-// Function to parse YAML config into struct
-all_args_t parseConfig(
-    const std::string &filename) { // change the filename to the real filename
-
-  YAML::Node config =
-      YAML::LoadFile(filename); // change the filename to its real filename
-
-  all_args_t args; // an instance of struct
-  args.amplitude = config["amplitude"].as<double>();
-  args.initial_frequency = config["initial_frequency"].as<double>();
-  args.frequency_change_rate = config["frequency_change_rate"].as<double>();
-  args.initial_phase = config["initial_phase"].as<double>();
-  args.num_samples = config["num_samples"].as<int>();
-  args.sample_rate = config["sample_rate"].as<double>();
-  args.output_iq_file = config["output_iq_file"].as<std::string>();
-  args.output_csv_file = config["output_csv_file"].as<std::string>();
-  args.write_iq = config["write_iq"].as<bool>();
-  args.write_csv = config["write_csv"].as<bool>();
-  return args;
-}
-
-// Function to update config from command-line arguments
-// (simple parsing: expects "--key value")
-
-void overrideConfig(all_args_t &args, int argc, char *argv[]) {
-  for (int i = 1; i < argc; ++i) {
-
-    if (std::strcmp(argv[i], "--amplitude") == 0 && i + 1 < argc) {
-      args.amplitude = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--initial_frequency") == 0 &&
-               i + 1 < argc) {
-      args.initial_frequency = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--frequency_change_rate") == 0 &&
-               i + 1 < argc) {
-      args.frequency_change_rate = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--initial_phase") == 0 && i + 1 < argc) {
-      args.initial_phase = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--num_samples") == 0 && i + 1 < argc) {
-      args.num_samples = std::atoi(argv[++i]);
-    } else if (std::strcmp(argv[i], "--sample_rate") == 0 && i + 1 < argc) {
-      args.sample_rate = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--output_iq_file") == 0 && i + 1 < argc) {
-      args.output_iq_file = argv[++i];
-    } else if (std::strcmp(argv[i], "--output_csv_file") == 0 && i + 1 < argc) {
-      args.output_csv_file = argv[++i];
-    } else if (std::strcmp(argv[i], "--write_iq") == 0 && i + 1 < argc) {
-      args.write_iq = (std::string(argv[++i]) == "true");
-    } else if (std::strcmp(argv[i], "--write_csv") == 0 && i + 1 < argc) {
-      args.write_csv = (std::string(argv[++i]) == "true");
-    } else if (std::strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
-      // Already processed separately, so skip here.
-      ++i;
-    } else {
-      std::cerr << "Unknown or incomplete option: " << argv[i] << std::endl;
-    }
+void handle_uhd_error(uhd_error err) {
+  if (err != UHD_ERROR_NONE) {
+    fprintf(stderr, "UHD ERROR: %d", UHD_ERROR_NONE);
+    exit(EXIT_FAILURE);
   }
 }
 
-// Write IQ data as binary file (.fc32) with 32-bit float interleaved (real,
-// imag)
 void writeIQBinary(
     const std::string &filename,
     const std::vector<std::complex<double>>
@@ -163,6 +97,21 @@ int main(int argc, char *argv[]) {
     writeCSV(args.output_csv_file, samples);
     std::cout << "CSV data written to " << args.output_csv_file << std::endl;
   }
+
+  rf_handler rf_dev = rf_handler();
+  uint32_t nof_channels = 1;
+  const uhd::device_addr_t dev_addr = uhd::device_addr_t(args.rf.device_args);
+  handle_uhd_error(rf_dev.usrp_make(dev_addr, nof_channels));
+
+  size_t channel_no = 0;
+  handle_uhd_error(rf_dev.set_tx_gain(channel_no, args.rf.tx_gain));
+  handle_uhd_error(rf_dev.set_tx_rate(args.sample_rate));
+  double actual_frequency = 0.0;
+  handle_uhd_error(
+      rf_dev.set_tx_freq(0, args.initial_frequency, actual_frequency));
+
+  uhd::stream_args_t stream_args;
+  tx_stream = rf_dev.get_tx_stream(stream_args);
 
   return 0;
 }

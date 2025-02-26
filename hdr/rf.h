@@ -24,89 +24,6 @@ public:
   uhd_error usrp_make(const uhd::device_addr_t &dev_addr_,
                       uint32_t nof_channels);
 
-private:
-  const uhd::fs_path TREE_DBOARD_RX_FRONTEND_NAME =
-      "/mboards/0/dboards/A/rx_frontends/A/name";
-  const std::chrono::milliseconds FE_RX_RESET_SLEEP_TIME_MS =
-      std::chrono::milliseconds(2000UL);
-
-  uhd_error set_tx_subdev(const std::string &string) {
-    std::cout << "Setting tx_subdev_spec to '" << string << "'\n";
-    usrp->set_tx_subdev_spec(string);
-    return UHD_ERROR_NONE;
-  }
-  uhd_error set_rx_subdev(const std::string &string) {
-    std::cout << "Setting rx_subdev_spec to '" << string << "'\n";
-    usrp->set_rx_subdev_spec(string);
-    return UHD_ERROR_NONE;
-  }
-
-  uhd_error test_ad936x_device(uint32_t nof_channels) {
-    uhd_error err = set_rx_rate(1.92e6);
-    if (err != UHD_ERROR_NONE) {
-      return err;
-    }
-
-    size_t max_samp = 0;
-    err = get_rx_stream(max_samp);
-    if (err != UHD_ERROR_NONE) {
-      return err;
-    }
-
-    // Allocate buffers
-    std::vector<float> data(max_samp * 2);
-    std::vector<void *> buf(nof_channels);
-    for (auto &b : buf) {
-      b = data.data();
-    }
-
-    uhd::rx_metadata_t md = {};
-    size_t nof_rxd_samples = 0;
-
-    // If no error getting RX stream, try to receive once
-    err = start_rx_stream(0.1);
-    if (err != UHD_ERROR_NONE) {
-      return err;
-    }
-
-    // Flush Stream
-    do {
-      err = receive(buf.data(), max_samp, md, 0.0f, false, nof_rxd_samples);
-      if (err != UHD_ERROR_NONE) {
-        return err;
-      }
-    } while (md.error_code != uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
-
-    // Receive
-    err = receive(buf.data(), max_samp, md, 2.0f, false, nof_rxd_samples);
-
-    if (err != UHD_ERROR_NONE) {
-      return err;
-    }
-
-    if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
-      std::cerr << md.strerror();
-      return UHD_ERROR_IO;
-    }
-
-    // Stop stream
-    err = stop_rx_stream();
-    if (err != UHD_ERROR_NONE) {
-      return err;
-    }
-
-    // Flush Stream
-    do {
-      err = receive(buf.data(), max_samp, md, 0.0f, false, nof_rxd_samples);
-      if (err != UHD_ERROR_NONE) {
-        return err;
-      }
-    } while (md.error_code != uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
-
-    return err;
-  }
-
-protected:
   uhd_error get_mboard_name(std::string &mboard_name) {
     mboard_name = usrp->get_mboard_name();
     return UHD_ERROR_NONE;
@@ -302,6 +219,88 @@ protected:
 
     rx_stream->issue_stream_cmd(stream_cmd);
     return UHD_ERROR_NONE;
+  }
+
+private:
+  const uhd::fs_path TREE_DBOARD_RX_FRONTEND_NAME =
+      "/mboards/0/dboards/A/rx_frontends/A/name";
+  const std::chrono::milliseconds FE_RX_RESET_SLEEP_TIME_MS =
+      std::chrono::milliseconds(2000UL);
+
+  uhd_error set_tx_subdev(const std::string &string) {
+    std::cout << "Setting tx_subdev_spec to '" << string << "'\n";
+    usrp->set_tx_subdev_spec(string);
+    return UHD_ERROR_NONE;
+  }
+  uhd_error set_rx_subdev(const std::string &string) {
+    std::cout << "Setting rx_subdev_spec to '" << string << "'\n";
+    usrp->set_rx_subdev_spec(string);
+    return UHD_ERROR_NONE;
+  }
+
+  uhd_error test_ad936x_device(uint32_t nof_channels) {
+    uhd_error err = set_rx_rate(1.92e6);
+    if (err != UHD_ERROR_NONE) {
+      return err;
+    }
+
+    size_t max_samp = 0;
+    err = get_rx_stream(max_samp);
+    if (err != UHD_ERROR_NONE) {
+      return err;
+    }
+
+    // Allocate buffers
+    std::vector<float> data(max_samp * 2);
+    std::vector<void *> buf(nof_channels);
+    for (auto &b : buf) {
+      b = data.data();
+    }
+
+    uhd::rx_metadata_t md = {};
+    size_t nof_rxd_samples = 0;
+
+    // If no error getting RX stream, try to receive once
+    err = start_rx_stream(0.1);
+    if (err != UHD_ERROR_NONE) {
+      return err;
+    }
+
+    // Flush Stream
+    do {
+      err = receive(buf.data(), max_samp, md, 0.0f, false, nof_rxd_samples);
+      if (err != UHD_ERROR_NONE) {
+        return err;
+      }
+    } while (md.error_code != uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
+
+    // Receive
+    err = receive(buf.data(), max_samp, md, 2.0f, false, nof_rxd_samples);
+
+    if (err != UHD_ERROR_NONE) {
+      return err;
+    }
+
+    if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
+      std::cerr << md.strerror();
+      return UHD_ERROR_IO;
+    }
+
+    // Stop stream
+    err = stop_rx_stream();
+    if (err != UHD_ERROR_NONE) {
+      return err;
+    }
+
+    // Flush Stream
+    do {
+      err = receive(buf.data(), max_samp, md, 0.0f, false, nof_rxd_samples);
+      if (err != UHD_ERROR_NONE) {
+        return err;
+      }
+    } while (md.error_code != uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
+
+    return err;
   }
 };
 
