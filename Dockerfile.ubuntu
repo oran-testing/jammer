@@ -41,4 +41,4 @@ WORKDIR /app
 
 COPY configs configs
 
-CMD [ "sh", "-c", "/usr/local/bin/rtue \"${CONFIG}\" $ARGS" ]
+CMD [ "sh", "-c", "/usr/local/bin/jammer \"${CONFIG}\" $ARGS" ]
