@@ -22,3 +22,16 @@ freq: 3440.5 # Only relevant for constant jammer
 # Choose the channel allocation scheme (1=UNII-1, 2=UNII-2a, 3=UNII-2c, 4=UNII-3)
 allocation: 1 # Only relevant for 5GHz band
 
+
+
+amplitude: 1.0
+initial_frequency: 10.0
+frequency_change_rate: 0.1
+initial_phase: 0.0
+num_samples: 1000
+sample_rate: 1000.0
+output_iq_file: "output.fc32"
+output_csv_file: "output.csv"
+write_iq: true
+write_csv: true
+
