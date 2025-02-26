@@ -22,6 +22,7 @@ else()
   message(FATAL_ERROR "UHD library not found")
 endif()
 
+find_package(yaml-cpp REQUIRED)
 
 file(GLOB JAMMER_SRC src/*.cc)
 
