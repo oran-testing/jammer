@@ -1,7 +1,12 @@
-#pragma once
+#ifndef NOISE_H
+#define NOISE_H
+#include <cmath>
 #include <complex>
 #include <math.h>
+#include <vector>
 
-std::complex<float> srsran_vec_gen_sine_simd(std::complex<float> amplitude,
-                                             float freq, std::complex<float> *z,
-                                             int len);
+std::vector<std::complex<double>>
+generateComplexSineWave(double amplitude, double initial_frequency,
+                        double frequency_change_rate, double initial_phase,
+                        int num_samples, double sample_rate);
+#endif
