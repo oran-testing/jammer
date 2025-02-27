@@ -110,8 +110,8 @@ int main(int argc, char *argv[]) {
   handle_uhd_error(
       rf_dev.set_tx_freq(0, args.initial_frequency, actual_frequency));
 
-  uhd::stream_args_t stream_args;
-  tx_stream = rf_dev.get_tx_stream(stream_args);
+  // uhd::stream_args_t stream_args;
+  //  tx_stream = rf_dev.get_tx_stream(stream_args);
 
   return 0;
 }

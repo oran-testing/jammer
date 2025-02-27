@@ -133,7 +133,7 @@ uhd_error rf_handler::usrp_make(const uhd::device_addr_t &dev_addr_,
                 << FE_RX_RESET_SLEEP_TIME_MS.count() << " ms\n";
 
       // Sleep
-      std::this_thread::sleep_for(FE_RX_RESET_SLEEP_TIME_MS);
+      // std::this_thread::sleep_for(FE_RX_RESET_SLEEP_TIME_MS);
 
       // Try once more making the device
       usrp = uhd::usrp::multi_usrp::make(dev_addr);
