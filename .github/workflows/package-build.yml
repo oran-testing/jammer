@@ -29,6 +29,8 @@ jobs:
     needs: check-commit
     if: needs.check-commit.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
