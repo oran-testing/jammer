@@ -9,11 +9,11 @@ all_args_t parseConfig(
 
   all_args_t args; // an instance of struct
   args.amplitude = config["amplitude"].as<double>();
-  args.initial_frequency = config["initial_frequency"].as<double>();
-  args.frequency_change_rate = config["frequency_change_rate"].as<double>();
-  args.initial_phase = config["initial_phase"].as<double>();
-  args.num_samples = config["num_samples"].as<int>();
-  args.sample_rate = config["sample_rate"].as<double>();
+  args.initial_frequency = config["amplitude_width"].as<double>();
+  args.frequency_change_rate = config["center_frequency"].as<double>();
+  args.initial_phase = config["double bandwidth"].as<double>();
+  args.num_samples = config["initial_phase"].as<double>();
+  args.sample_rate = config["sampling_freq"].as<double>();
   args.output_iq_file = config["output_iq_file"].as<std::string>();
   args.output_csv_file = config["output_csv_file"].as<std::string>();
   args.write_iq = config["write_iq"].as<bool>();
@@ -28,17 +28,17 @@ void overrideConfig(all_args_t &args, int argc, char *argv[]) {
 
     if (std::strcmp(argv[i], "--amplitude") == 0 && i + 1 < argc) {
       args.amplitude = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--initial_frequency") == 0 &&
+    } else if (std::strcmp(argv[i], "--amplitude_witdth") == 0 &&
                i + 1 < argc) {
       args.initial_frequency = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--frequency_change_rate") == 0 &&
+    } else if (std::strcmp(argv[i], "--center_frequency") == 0 &&
                i + 1 < argc) {
       args.frequency_change_rate = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--initial_phase") == 0 && i + 1 < argc) {
+    } else if (std::strcmp(argv[i], "--bandwidth") == 0 && i + 1 < argc) {
       args.initial_phase = std::atof(argv[++i]);
-    } else if (std::strcmp(argv[i], "--num_samples") == 0 && i + 1 < argc) {
+    } else if (std::strcmp(argv[i], "--initial_phase") == 0 && i + 1 < argc) {
       args.num_samples = std::atoi(argv[++i]);
-    } else if (std::strcmp(argv[i], "--sample_rate") == 0 && i + 1 < argc) {
+    } else if (std::strcmp(argv[i], "--sampling_freq") == 0 && i + 1 < argc) {
       args.sample_rate = std::atof(argv[++i]);
     } else if (std::strcmp(argv[i], "--output_iq_file") == 0 && i + 1 < argc) {
       args.output_iq_file = argv[++i];

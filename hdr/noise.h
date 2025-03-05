@@ -12,3 +12,5 @@ generateComplexSineWave(double amplitude, double initial_frequency,
                         double frequency_change_rate, double initial_phase,
                         int num_samples, double sample_rate);
 #endif
+
+

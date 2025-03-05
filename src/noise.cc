@@ -1,4 +1,3 @@
-#include <fftw3.h>
 #include "noise.h"
 #include <random>
 #include<iostream>
@@ -56,3 +55,24 @@ generateComplexSineWave(double amplitude, double amplitude_width, double center_
 
   return samples;
 }
+
+void transmission(uhd::usrp::single_usrp::sptr usrp, double amplitude, double amplitude_width, double center_frequency, double bandwidth,
+  double sampling_freq, size_t buffer_size) {
+
+  // Configure the USRP transmission stream
+  uhd::stream_args_t stream_args("fc32", "sc16");  // Complex float to short conversion
+  uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
+  uhd::tx_metadata_t metadata;
+  metadata.start_of_burst = true;
+  metadata.end_of_burst = false;
+  metadata.has_time_spec = false;
+
+// Transmit buffer
+  std::vector<std::complex<float>> buffer;
+
+  while (true) {
+  buffer = generateComplexSineWave(amplitude, amplitude_width, center_frequency, bandwidth, 0.0, sampling_freq, buffer_size);
+  tx_stream->send(buffer.data(), buffer.size(), metadata);
+}
+  }
