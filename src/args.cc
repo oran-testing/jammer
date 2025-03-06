@@ -8,19 +8,19 @@ all_args_t parseConfig(
       YAML::LoadFile(filename); // change the filename to its real filename
 
   all_args_t args; // an instance of struct
-  args.amplitude = config["amplitude"].as<double>();
+  args.amplitude = config["amplitude"].as<float>();
   args.amplitude = config["num_samples"].as<size_t>();
-  args.amplitude_width = config["amplitude_width"].as<double>();
-  args.center_frequency = config["center_frequency"].as<double>();
-  args.initial_phase = config["bandwidth"].as<double>();
-  args.initial_phase = config["initial_phase"].as<double>();
-  args.sampling_freq = config["sampling_freq"].as<double>();
+  args.amplitude_width = config["amplitude_width"].as<float>();
+  args.center_frequency = config["center_frequency"].as<float>();
+  args.initial_phase = config["bandwidth"].as<float>();
+  args.initial_phase = config["initial_phase"].as<float>();
+  args.sampling_freq = config["sampling_freq"].as<float>();
   args.output_iq_file = config["output_iq_file"].as<std::string>();
   args.output_csv_file = config["output_csv_file"].as<std::string>();
   args.write_iq = config["write_iq"].as<bool>();
   args.write_csv = config["write_csv"].as<bool>();
   args.rf.device_args = config["device_args"].as<std::string>();
-  args.rf.tx_gain = config["tx_gain"].as<double>();
+  args.rf.tx_gain = config["tx_gain"].as<float>();
   return args;
 }
 

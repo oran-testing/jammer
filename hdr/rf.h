@@ -11,9 +11,9 @@ class rf_handler {
 public:
   uhd::usrp::multi_usrp::sptr usrp = nullptr;
   uhd::stream_args_t stream_args = {};
-  double lo_freq_tx_hz = 0.0;
-  double lo_freq_rx_hz = 0.0;
-  double lo_freq_offset_hz = 0.0;
+  float lo_freq_tx_hz = 0.0;
+  float lo_freq_rx_hz = 0.0;
+  float lo_freq_offset_hz = 0.0;
 
   uhd::rx_streamer::sptr rx_stream = nullptr;
   uhd::tx_streamer::sptr tx_stream = nullptr;
@@ -36,7 +36,7 @@ public:
     sensors = usrp->get_rx_sensor_names();
     return UHD_ERROR_NONE;
   }
-  uhd_error get_sensor(const std::string &sensor_name, double &sensor_value) {
+  uhd_error get_sensor(const std::string &sensor_name, float &sensor_value) {
     sensor_value = usrp->get_mboard_sensor(sensor_name).to_real();
     return UHD_ERROR_NONE;
   }
@@ -75,18 +75,18 @@ public:
 
     return UHD_ERROR_NONE;
   }
-  uhd_error set_master_clock_rate(double rate) {
+  uhd_error set_master_clock_rate(float rate) {
     std::cout << "Setting master clock rate to " << rate / 1e6 << " MHz"
               << "\n";
     usrp->set_master_clock_rate(rate);
     return UHD_ERROR_NONE;
   }
-  uhd_error set_rx_rate(double rate) {
+  uhd_error set_rx_rate(float rate) {
     std::cout << "Setting Rx Rate to " << rate / 1e6 << "MHz" << "\n";
     usrp->set_rx_rate(rate);
     return UHD_ERROR_NONE;
   }
-  uhd_error set_tx_rate(double rate) {
+  uhd_error set_tx_rate(float rate) {
     std::cout << "Setting Tx Rate to " << rate / 1e6 << "MHz" << "\n";
     usrp->set_tx_rate(rate);
     return UHD_ERROR_NONE;
@@ -118,27 +118,27 @@ public:
     }
     return UHD_ERROR_NONE;
   }
-  uhd_error set_tx_gain(size_t ch, double gain) {
+  uhd_error set_tx_gain(size_t ch, float gain) {
     std::cout << "Setting channel " << ch << " Tx gain to " << gain << " dB"
               << "\n";
     usrp->set_tx_gain(gain, ch);
     return UHD_ERROR_NONE;
   }
-  uhd_error set_rx_gain(size_t ch, double gain) {
+  uhd_error set_rx_gain(size_t ch, float gain) {
     std::cout << "Setting channel " << ch << " Rx gain to " << gain << " dB"
               << "\n";
     usrp->set_rx_gain(gain, ch);
     return UHD_ERROR_NONE;
   }
-  uhd_error get_rx_gain(double &gain) {
+  uhd_error get_rx_gain(float &gain) {
     gain = usrp->get_rx_gain();
     return UHD_ERROR_NONE;
   }
-  uhd_error get_tx_gain(double &gain) {
+  uhd_error get_tx_gain(float &gain) {
     gain = usrp->get_tx_gain();
     return UHD_ERROR_NONE;
   }
-  uhd_error set_tx_freq(uint32_t ch, double target_freq, double &actual_freq) {
+  uhd_error set_tx_freq(uint32_t ch, float target_freq, float &actual_freq) {
     std::cout << "Setting channel " << ch << " Tx frequency to "
               << target_freq / 1e6 << " MHz\n";
 
@@ -160,7 +160,7 @@ public:
     actual_freq = tune_result.target_rf_freq;
     return UHD_ERROR_NONE;
   }
-  uhd_error set_rx_freq(uint32_t ch, double target_freq, double &actual_freq) {
+  uhd_error set_rx_freq(uint32_t ch, float target_freq, float &actual_freq) {
     std::cout << "Setting channel " << ch << " Rx frequency to "
               << target_freq / 1e6 << " MHz\n";
 
@@ -194,7 +194,7 @@ public:
   }
 
   uhd_error receive(void **buffs, const size_t nsamps_per_buff,
-                    uhd::rx_metadata_t &metadata, const double timeout,
+                    uhd::rx_metadata_t &metadata, const float timeout,
                     const bool one_packet, size_t &nof_rxd_samples) {
     uhd::rx_streamer::buffs_type buffs_cpp(buffs,
                                            rx_stream->get_num_channels());
@@ -203,7 +203,7 @@ public:
     return UHD_ERROR_NONE;
   }
 
-  uhd_error start_rx_stream(double delay) {
+  uhd_error start_rx_stream(float delay) {
     std::cout << "Starting Rx stream\n";
     uhd::time_spec_t time_spec;
     uhd_error err = get_time_now(time_spec);

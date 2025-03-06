@@ -23,7 +23,7 @@ void handle_uhd_error(uhd_error err) {
 
 void writeIQBinary(
     const std::string &filename,
-    const std::vector<std::complex<double>>
+    const std::vector<std::complex<float>>
         &samples) { // Remember to change the filename to a real name
   std::ofstream outfile(filename, std::ios::binary);
   if (!outfile) {
@@ -43,7 +43,7 @@ void writeIQBinary(
 // Write CSV file: index, real, imag
 
 void writeCSV(const std::string &filename,
-              const std::vector<std::complex<double>> &samples) {
+              const std::vector<std::complex<float>> &samples) {
   std::ofstream outfile(filename);
   if (!outfile) {
     std::cerr << "Error opening file for CSV output: " << filename << std::endl;
@@ -55,16 +55,16 @@ void writeCSV(const std::string &filename,
     outfile << i << "," << samples[i].real() << "," << samples[i].imag()
             << "\n";
   }
-              }
-  int main(int argc, char *argv[]) {
-    std::string config_file = "";
-  
-    for (int i = 1; i < argc; ++i) {
-      if (std::strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
-        config_file = argv[++i];
-        break;
-      }
+}
+int main(int argc, char *argv[]) {
+  std::string config_file = "";
+
+  for (int i = 1; i < argc; ++i) {
+    if (std::strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
+      config_file = argv[++i];
+      break;
     }
+  }
 
   if (config_file.empty()) {
     fprintf(stderr, "Usage: jammer --config [config file]\n");
@@ -78,9 +78,10 @@ void writeCSV(const std::string &filename,
   overrideConfig(args, argc, argv);
 
   // Generate the complex sine wave
-  auto samples = generateComplexSineWave(
-      args.amplitude,args.amplitude_width,
-      args.initial_phase, args.center_frequency, args.bandwidth, args.sampling_freq);
+  auto samples = generateComplexSineWave(args.amplitude, args.amplitude_width,
+                                         args.initial_phase,
+                                         args.center_frequency, args.bandwidth,
+                                         args.sampling_freq, args.num_samples);
 
   // Write IQ binary file if enabled
   if (args.write_iq) {
@@ -103,12 +104,12 @@ void writeCSV(const std::string &filename,
   size_t channel_no = 0;
   handle_uhd_error(rf_dev.set_tx_gain(channel_no, args.rf.tx_gain));
   handle_uhd_error(rf_dev.set_tx_rate(args.sampling_freq));
-  double actual_frequency = 0.0;
+  float actual_frequency = 0.0;
   handle_uhd_error(
       rf_dev.set_tx_freq(0, args.center_frequency, actual_frequency));
 
-  //uhd::stream_args_t stream_args;
-  //  tx_stream = rf_dev.get_tx_stream(stream_args);
+  // uhd::stream_args_t stream_args;
+  //   tx_stream = rf_dev.get_tx_stream(stream_args);
 
   return 0;
 }

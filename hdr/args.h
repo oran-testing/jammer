@@ -7,17 +7,17 @@
 
 typedef struct rf_args_s {
   std::string device_args;
-  double tx_gain;
+  float tx_gain;
 } rf_args_t;
 
 typedef struct all_args_s {
- double amplitude; 
- double amplitude_width; 
- double center_frequency; 
- double bandwidth;
- double initial_phase;
- size_t num_samples;
- double sampling_freq;
+  float amplitude;
+  float amplitude_width;
+  float center_frequency;
+  float bandwidth;
+  float initial_phase;
+  size_t num_samples;
+  float sampling_freq;
   std::string output_iq_file;
   std::string output_csv_file;
   bool write_iq;
