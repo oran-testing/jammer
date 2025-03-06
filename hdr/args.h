@@ -11,12 +11,13 @@ typedef struct rf_args_s {
 } rf_args_t;
 
 typedef struct all_args_s {
-  double amplitude;
-  double initial_frequency;
-  double frequency_change_rate;
-  double initial_phase;
-  int num_samples;
-  double sample_rate;
+ double amplitude; 
+ double amplitude_width; 
+ double center_frequency; 
+ double bandwidth;
+ double initial_phase;
+ size_t num_samples;
+ double sampling_freq;
   std::string output_iq_file;
   std::string output_csv_file;
   bool write_iq;

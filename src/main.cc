@@ -41,6 +41,7 @@ void writeIQBinary(
 }
 
 // Write CSV file: index, real, imag
+
 void writeCSV(const std::string &filename,
               const std::vector<std::complex<double>> &samples) {
   std::ofstream outfile(filename);
@@ -54,22 +55,18 @@ void writeCSV(const std::string &filename,
     outfile << i << "," << samples[i].real() << "," << samples[i].imag()
             << "\n";
   }
-  outfile.close();
-}
-
-int main(int argc, char *argv[]) {
-  // Default config file name
-  std::string config_file = "";
-
-  // Check if --config option is provided first
-  for (int i = 1; i < argc; ++i) {
-    if (std::strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
-      config_file = argv[++i];
-      break;
+              }
+  int main(int argc, char *argv[]) {
+    std::string config_file = "";
+  
+    for (int i = 1; i < argc; ++i) {
+      if (std::strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
+        config_file = argv[++i];
+        break;
+      }
     }
-  }
 
-  if (config_file == "") {
+  if (config_file.empty()) {
     fprintf(stderr, "Usage: jammer --config [config file]\n");
     return EXIT_FAILURE;
   }
@@ -82,8 +79,8 @@ int main(int argc, char *argv[]) {
 
   // Generate the complex sine wave
   auto samples = generateComplexSineWave(
-      args.amplitude, args.initial_frequency, args.frequency_change_rate,
-      args.initial_phase, args.num_samples, args.sample_rate);
+      args.amplitude,args.amplitude_width,
+      args.initial_phase, args.center_frequency, args.bandwidth, args.sampling_freq);
 
   // Write IQ binary file if enabled
   if (args.write_iq) {
@@ -105,12 +102,12 @@ int main(int argc, char *argv[]) {
 
   size_t channel_no = 0;
   handle_uhd_error(rf_dev.set_tx_gain(channel_no, args.rf.tx_gain));
-  handle_uhd_error(rf_dev.set_tx_rate(args.sample_rate));
+  handle_uhd_error(rf_dev.set_tx_rate(args.sampling_freq));
   double actual_frequency = 0.0;
   handle_uhd_error(
-      rf_dev.set_tx_freq(0, args.initial_frequency, actual_frequency));
+      rf_dev.set_tx_freq(0, args.center_frequency, actual_frequency));
 
-  // uhd::stream_args_t stream_args;
+  //uhd::stream_args_t stream_args;
   //  tx_stream = rf_dev.get_tx_stream(stream_args);
 
   return 0;

@@ -1,10 +1,10 @@
 amplitude: 1.0
-initial_frequency: 3.5e9
-frequency_change_rate: 0.0
-initial_phase: 0
-num_samples: 10000000
-#sample_rate: 1000.0
-sample_rate: 24.04e6
+amplitude_width: 
+center_frequency: 0.0
+bandwidth: 0
+initial_phase: 10000000
+sampling_freq: 40000000
+num_samples: 10000
 output_iq_file: "output.fc32"
 output_csv_file: "output.csv"
 write_iq: false
