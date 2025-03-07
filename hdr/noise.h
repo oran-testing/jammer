@@ -22,5 +22,5 @@ generateComplexSineWave(float amplitude, float amplitude_width,
 
 void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
                   float amplitude_width, float center_frequency,
-                  float bandwidth, float sampling_freq, size_t buffer_size);
+                  float bandwidth, float sampling_freq, size_t buffer_size, size_t num_samples, float initial_phase);
 #endif

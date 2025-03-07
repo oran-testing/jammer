@@ -32,13 +32,14 @@ void writeIQBinary(
     return;
   }
   for (const auto &sample : samples) {
-    float real = static_cast<float>(sample.real());
-    float imag = static_cast<float>(sample.imag());
+    float real = sample.real();
+    float imag = sample.imag();
     outfile.write(reinterpret_cast<const char *>(&real), sizeof(float));
     outfile.write(reinterpret_cast<const char *>(&imag), sizeof(float));
   }
   outfile.close();
 }
+
 
 // Write CSV file: index, real, imag
 
@@ -110,6 +111,17 @@ int main(int argc, char *argv[]) {
 
   // uhd::stream_args_t stream_args;
   //   tx_stream = rf_dev.get_tx_stream(stream_args);
+  
+  transmission(rf_dev.usrp, 
+    args.amplitude, 
+    args.amplitude_width, 
+    args.center_frequency, 
+    args.bandwidth, 
+    args.sampling_freq, 
+    1024,          // buffer_size (or an appropriate value)
+    args.num_samples,
+    args.initial_phase);
+
 
   return 0;
 }

@@ -9,7 +9,7 @@ all_args_t parseConfig(
 
   all_args_t args; // an instance of struct
   args.amplitude = config["amplitude"].as<float>();
-  args.amplitude = config["num_samples"].as<size_t>();
+  args.num_samples= config["num_samples"].as<size_t>();
   args.amplitude_width = config["amplitude_width"].as<float>();
   args.center_frequency = config["center_frequency"].as<float>();
   args.initial_phase = config["bandwidth"].as<float>();

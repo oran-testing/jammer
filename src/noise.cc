@@ -1,4 +1,5 @@
 #include "noise.h"
+#include "args.h"
 
 std::vector<std::complex<float>>
 generateComplexSineWave(float amplitude, float amplitude_width,
@@ -60,7 +61,7 @@ generateComplexSineWave(float amplitude, float amplitude_width,
 
 void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
                   float amplitude_width, float center_frequency,
-                  float bandwidth, float sampling_freq, size_t buffer_size) {
+                  float bandwidth, float sampling_freq, size_t buffer_size, size_t num_samples, float initial_phase) {
 
   // Configure the USRP transmission stream
   uhd::stream_args_t stream_args("fc32",
@@ -77,8 +78,8 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
   while (true) {
     // Generate `buffer_size` samples per iteration
     samples =
-        generateComplexSineWave(amplitude, amplitude_width, center_frequency,
-                                bandwidth, 0.0, sampling_freq, 1000);
+        generateComplexSineWave(amplitude, amplitude_width, num_samples, center_frequency,
+                                bandwidth, initial_phase, sampling_freq);
 
     // Copy and convert samples to float
     std::vector<std::complex<float>> tx_buffer;
@@ -91,10 +92,15 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
 
     // Transmit samples
     tx_stream->send(tx_buffer.data(), tx_buffer.size(), metadata);
+    size_t x = tx_stream->get_max_num_samps();
+    std::cout << (int)x << std::endl;
 
+    std::cout << x << std::endl;
     // After the first packet, set `start_of_burst = false`
     metadata.start_of_burst = false;
   }
 
   // We will never reach this point unless we manually break the loop
 }
+
+
