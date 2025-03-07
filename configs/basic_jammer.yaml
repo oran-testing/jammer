@@ -1,9 +1,9 @@
 amplitude: 1.0
 amplitude_width: 10
-center_frequency: 3.5e9
+center_frequency: 3500e6
 bandwidth: 1.0e7
 initial_phase: 0
-sampling_freq: 4.0e7
+sampling_freq: 40e6
 num_samples: 10737410
 output_iq_file: "output.fc32"
 output_csv_file: "output.csv"

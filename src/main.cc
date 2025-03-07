@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     args.center_frequency, 
     args.bandwidth, 
     args.sampling_freq, 
-    2047,          // buffer_size (or an appropriate value)
+    100,          // buffer_size (or an appropriate value)
     args.num_samples,
     args.initial_phase);
 
