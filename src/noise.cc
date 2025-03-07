@@ -13,7 +13,7 @@ generateComplexSineWave(float amplitude, float amplitude_width,
   const float delta_t =
       1.0 /
       sampling_freq; // Calculates the time between each sample; Sample interval
-  float halfBandwidth = bandwidth / (2.0 * 1000.0);
+  float halfBandwidth = bandwidth / (2.0);
   float phase = initial_phase;
 
   std::random_device rd;
@@ -92,10 +92,8 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
 
     // Transmit samples
     tx_stream->send(tx_buffer.data(), tx_buffer.size(), metadata);
-    size_t x = tx_stream->get_max_num_samps();
-    std::cout << (int)x << std::endl;
+    std::cout << "Transmitting...." << std::endl;
 
-    std::cout << x << std::endl;
     // After the first packet, set `start_of_burst = false`
     metadata.start_of_burst = false;
   }
