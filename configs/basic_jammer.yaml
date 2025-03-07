@@ -1,5 +1,5 @@
-amplitude: 1.0
-amplitude_width: 10
+amplitude: 0.7
+amplitude_width: 0.05
 center_frequency: 3500e6
 bandwidth: 1.0e7
 initial_phase: 0
