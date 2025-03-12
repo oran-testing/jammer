@@ -75,7 +75,7 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
   metadata.has_time_spec = false;
   std::vector<std::complex<float>> samples;
 
-  while (true) {
+  
     // Generate `buffer_size` samples per iteration
     samples =
         generateComplexSineWave(amplitude, amplitude_width, num_samples, center_frequency,
@@ -89,6 +89,8 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
       tx_buffer.push_back(
           std::complex<float>(samples[i].real(), samples[i].imag()));
     }
+
+    while (true) {
 
     // Transmit samples
     tx_stream->send(tx_buffer.data(), tx_buffer.size(), metadata);
