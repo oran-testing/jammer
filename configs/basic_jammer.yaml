@@ -4,7 +4,7 @@ center_frequency: 1.842e9
 bandwidth: 80e6
 initial_phase: 0
 sampling_freq: 40e6
-num_samples: 2048
+num_samples: 20000
 output_iq_file: "output.fc32"
 output_csv_file: "output.csv"
 write_iq: false

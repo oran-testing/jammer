@@ -107,7 +107,6 @@ int main(int argc, char *argv[]) {
 
   // uhd::stream_args_t stream_args;
   //   tx_stream = rf_dev.get_tx_stream(stream_args);
-
   transmission(rf_dev.usrp, args);
 
   return 0;

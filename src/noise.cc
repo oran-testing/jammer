@@ -72,7 +72,6 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, const all_args_t args) {
   metadata.has_time_spec = false;
 
   std::vector<std::complex<float>> samples = generateComplexSineWave(args);
-
   while (true) {
 
     // Transmit samples
