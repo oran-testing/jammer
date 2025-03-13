@@ -1,41 +1,40 @@
 #include "noise.h"
-#include "args.h"
 
 std::vector<std::complex<float>>
-generateComplexSineWave(float amplitude, float amplitude_width,
-                        float center_frequency, float bandwidth,
-                        float initial_phase, float sampling_freq,
-                        size_t num_samples) {
+generateComplexSineWave(const all_args_t args) {
 
   std::vector<std::complex<float>> samples;
-  samples.reserve(num_samples);
+  samples.reserve(args.num_samples);
 
   const float delta_t =
-      1.0 /
-      sampling_freq; // Calculates the time between each sample; Sample interval
-  float halfBandwidth = bandwidth / (2.0);
-  float phase = initial_phase;
+      1.0 / args.sampling_freq; // Calculates the time between each sample;
+                                // Sample interval
+  float halfBandwidth = args.bandwidth / (2.0);
+  float phase = args.initial_phase;
 
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<float> freq_dist(
-      center_frequency - halfBandwidth, center_frequency + halfBandwidth);
-  std::uniform_real_distribution<float> ampl(amplitude - amplitude_width / 2.0,
-                                             amplitude + amplitude_width / 2.0);
+      args.center_frequency - halfBandwidth,
+      args.center_frequency + halfBandwidth);
+  std::uniform_real_distribution<float> ampl(
+      args.amplitude - args.amplitude_width / 2.0,
+      args.amplitude + args.amplitude_width / 2.0);
   // generates random frequencies in the range [center-halfband,
   // center+halfband]
 
-  for (size_t i = 0; i < num_samples; i++) { // infinite no of samples generated
+  for (size_t i = 0; i < args.num_samples;
+       i++) { // infinite no of samples generated
 
     float current_freq = freq_dist(gen);
     float current_ampl = ampl(gen);
 
     // Generate complex sample using polar coordinates
-    /*Computes z = amplitude * cos(phase) {real part} + amplitude * (i)
-    sin(phase) {imaginary part Do note that imaginary part is the coff. of i
+    /*Computes z = args.amplitude * cos(phase) {real part} + args.amplitude *
+    (i) sin(phase) {imaginary part Do note that imaginary part is the coff. of i
     so sin(phase)} If the case of converting to cartesian plane arises the
     angle (phase) can be found by
-    arcsin(imaginary/amplitude) or arccos(real/amp.)*/
+    arcsin(imaginary/args.amplitude) or arccos(real/amp.)*/
     samples.push_back(std::polar(current_ampl, phase));
 
     // Update phase for next sample (correct frequency ramp integration)
@@ -59,9 +58,7 @@ generateComplexSineWave(float amplitude, float amplitude_width,
   return samples;
 }
 
-void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
-                  float amplitude_width, float center_frequency,
-                  float bandwidth, float sampling_freq, size_t buffer_size, size_t num_samples, float initial_phase) {
+void transmission(uhd::usrp::multi_usrp::sptr usrp, const all_args_t args) {
 
   // Configure the USRP transmission stream
   uhd::stream_args_t stream_args("fc32",
@@ -73,27 +70,13 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
       true; // First packet should have start_of_burst = true
   metadata.end_of_burst = false;
   metadata.has_time_spec = false;
-  std::vector<std::complex<float>> samples;
 
-  
-    // Generate `buffer_size` samples per iteration
-    samples =
-        generateComplexSineWave(amplitude, amplitude_width, num_samples, center_frequency,
-                                bandwidth, initial_phase, sampling_freq);
+  std::vector<std::complex<float>> samples = generateComplexSineWave(args);
 
-    // Copy and convert samples to float
-    std::vector<std::complex<float>> tx_buffer;
-    tx_buffer.reserve(samples.size());
-
-    for (size_t i = 0; i < samples.size(); i++) {
-      tx_buffer.push_back(
-          std::complex<float>(samples[i].real(), samples[i].imag()));
-    }
-
-    while (true) {
+  while (true) {
 
     // Transmit samples
-    tx_stream->send(tx_buffer.data(), tx_buffer.size(), metadata);
+    tx_stream->send(samples.data(), samples.size(), metadata);
     std::cout << "Transmitting...." << std::endl;
 
     // After the first packet, set `start_of_burst = false`
@@ -102,5 +85,3 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
 
   // We will never reach this point unless we manually break the loop
 }
-
-

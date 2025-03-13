@@ -1,5 +1,6 @@
 #ifndef NOISE_H
 #define NOISE_H
+#include "args.h"
 #include <cmath>
 #include <complex>
 #include <iostream>
@@ -14,13 +15,8 @@
 
 const float PI = std::acos(-1.0);
 
-std::vector<std::complex<float>>
-generateComplexSineWave(float amplitude, float amplitude_width,
-                        float center_frequency, float bandwidth,
-                        float initial_phase, float sampling_freq,
-                        size_t num_samples);
+std::vector<std::complex<float>> generateComplexSineWave(const all_args_t args);
 
-void transmission(uhd::usrp::multi_usrp::sptr usrp, float amplitude,
-                  float amplitude_width, float center_frequency,
-                  float bandwidth, float sampling_freq, size_t buffer_size, size_t num_samples, float initial_phase);
+void transmission(uhd::usrp::multi_usrp::sptr usrp, const all_args_t args);
+
 #endif

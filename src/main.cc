@@ -40,7 +40,6 @@ void writeIQBinary(
   outfile.close();
 }
 
-
 // Write CSV file: index, real, imag
 
 void writeCSV(const std::string &filename,
@@ -79,10 +78,7 @@ int main(int argc, char *argv[]) {
   overrideConfig(args, argc, argv);
 
   // Generate the complex sine wave
-  auto samples = generateComplexSineWave(args.amplitude, args.amplitude_width,
-                                         args.initial_phase,
-                                         args.center_frequency, args.bandwidth,
-                                         args.sampling_freq, args.num_samples);
+  auto samples = generateComplexSineWave(args);
 
   // Write IQ binary file if enabled
   if (args.write_iq) {
@@ -111,17 +107,8 @@ int main(int argc, char *argv[]) {
 
   // uhd::stream_args_t stream_args;
   //   tx_stream = rf_dev.get_tx_stream(stream_args);
-  
-  transmission(rf_dev.usrp, 
-    args.amplitude, 
-    args.amplitude_width, 
-    args.center_frequency, 
-    args.bandwidth, 
-    args.sampling_freq, 
-    100,          // buffer_size (or an appropriate value)
-    args.num_samples,
-    args.initial_phase);
 
+  transmission(rf_dev.usrp, args);
 
   return 0;
 }
