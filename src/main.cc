@@ -14,12 +14,18 @@
 #include <uhd/types/device_addr.hpp>
 #include <vector>
 
+
+
+
 void handle_uhd_error(uhd_error err) {
   if (err != UHD_ERROR_NONE) {
     fprintf(stderr, "UHD ERROR: %d", UHD_ERROR_NONE);
     exit(EXIT_FAILURE);
   }
 }
+
+
+
 
 void writeIQBinary(
     const std::string &filename,
@@ -42,6 +48,10 @@ void writeIQBinary(
 
 // Write CSV file: index, real, imag
 
+
+
+
+
 void writeCSV(const std::string &filename,
               const std::vector<std::complex<float>> &samples) {
   std::ofstream outfile(filename);
@@ -56,6 +66,10 @@ void writeCSV(const std::string &filename,
             << "\n";
   }
 }
+
+
+
+
 int main(int argc, char *argv[]) {
   std::string config_file = "";
 
@@ -111,9 +125,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-// parse args into all_args_t using yaml-cpp
-// write sin wave complex float to file .fc32
-// use pysdr in python to read the constellation
-// write sin wave as csv file as well, I will handle cartesian plotting
-// Make soem argmetns for write to iq and write to csv

@@ -1,5 +1,6 @@
 #include "noise.h"
 
+
 std::vector<std::complex<float>>
 generateComplexSineWave(const all_args_t args) {
 
@@ -23,8 +24,9 @@ generateComplexSineWave(const all_args_t args) {
   // generates random frequencies in the range [center-halfband,
   // center+halfband]
 
+
   for (size_t i = 0; i < args.num_samples;
-       i++) { // infinite no of samples generated
+       i++) {
 
     float current_freq = freq_dist(gen);
     float current_ampl = ampl(gen);
@@ -35,7 +37,9 @@ generateComplexSineWave(const all_args_t args) {
     so sin(phase)} If the case of converting to cartesian plane arises the
     angle (phase) can be found by
     arcsin(imaginary/args.amplitude) or arccos(real/amp.)*/
+
     samples.push_back(std::polar(current_ampl, phase));
+
 
     // Update phase for next sample (correct frequency ramp integration)
     phase += 2 * PI * current_freq * delta_t;
@@ -43,13 +47,15 @@ generateComplexSineWave(const all_args_t args) {
     // 2pif = angular velocity, 2pif(deltat) = change in angle
     // per sec * delta_t =
     // change in angle in delta_t time.
-
     // Keep phase wrapped to [0, 2π) to prevent precision loss
+
 
     phase = fmod(
         phase, 2 * PI); // remander angle after subtracting the multiples of 2pi
     // doesn't change the value of cos or sin and also returns it to the
     // principle value from 0 to 2pi.
+    
+    
     if (phase < 0.0) {
       phase += 2 * PI;
     }
@@ -57,6 +63,7 @@ generateComplexSineWave(const all_args_t args) {
 
   return samples;
 }
+
 
 void transmission(uhd::usrp::multi_usrp::sptr usrp, const all_args_t args) {
 
@@ -72,6 +79,8 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, const all_args_t args) {
   metadata.has_time_spec = false;
 
   std::vector<std::complex<float>> samples = generateComplexSineWave(args);
+  
+  
   while (true) {
 
     // Transmit samples
