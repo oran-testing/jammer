@@ -7,9 +7,9 @@ generateComplexSineWave(const all_args_t args) {
   samples.reserve(args.num_samples);
 
   const float delta_t =
-      1.0 / args.sampling_freq; // Calculates the time between each sample;
+      1.0f / args.sampling_freq; // Calculates the time between each sample;
                                 // Sample interval
-  float halfBandwidth = args.bandwidth / (2.0);
+  float halfBandwidth = args.bandwidth / (2.0f);
   float phase = args.initial_phase;
 
   std::random_device rd;
@@ -18,8 +18,8 @@ generateComplexSineWave(const all_args_t args) {
       args.center_frequency - halfBandwidth,
       args.center_frequency + halfBandwidth);
   std::uniform_real_distribution<float> ampl(
-      args.amplitude - args.amplitude_width / 2.0,
-      args.amplitude + args.amplitude_width / 2.0);
+      args.amplitude - args.amplitude_width / 2.0f,
+      args.amplitude + args.amplitude_width / 2.0f);
   // generates random frequencies in the range [center-halfband,
   // center+halfband]
 
@@ -72,6 +72,7 @@ void transmission(uhd::usrp::multi_usrp::sptr usrp, const all_args_t args) {
   metadata.has_time_spec = false;
 
   std::vector<std::complex<float>> samples = generateComplexSineWave(args);
+  
   while (true) {
 
     // Transmit samples
