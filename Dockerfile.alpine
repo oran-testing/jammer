@@ -1,48 +1,21 @@
-ARG OS_VERSION=3.18
-ARG LIB=uhd
-ARG LIB_VERSION=4.7.0.0
-ARG MARCH=native
-ARG NUM_CORES=""
+FROM ghcr.io/oran-testing/components_base
 
-FROM alpine:$OS_VERSION
-
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-    apk update
-
-RUN apk add --no-cache \
-    cmake \
-    make \
-    gcc \
-    g++ \
-    pkgconf \
-    boost-dev \
-    uhd \
-    uhd-dev \
-    yaml-cpp-dev
-
-RUN mkdir -p /app
-
-WORKDIR /app
+WORKDIR /jammer
 
 COPY CMakeLists.txt .
 COPY hdr hdr
 COPY src src
 COPY cmake cmake
 
-RUN mkdir -p /app/build
+RUN mkdir -p /jammer/build && rm -rf /jammer/build/*
 
-WORKDIR /app/build
+WORKDIR /jammer/build
 
 RUN cmake ../ && \
     make -j$(nproc) && \
     make install
 
-WORKDIR /app
+WORKDIR /jammer
 
-COPY configs configs
-
-ENV CONFIG="configs/basic_jammer.yaml"
-
-CMD [ "sh", "-c", "/usr/local/bin/jammer --config \"${CONFIG}\" $ARGS" ]
+CMD [ "sh", "-c", "/usr/local/bin/jammer --config /jammer.yaml $ARGS" ]
 
