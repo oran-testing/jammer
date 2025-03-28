@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <iostream>
-
 #include "args.h"
 #include "noise.h"
 #include "rf.h"

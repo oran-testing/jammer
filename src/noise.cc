@@ -30,6 +30,7 @@ generateComplexSineWave(const all_args_t args) {
     float current_ampl = ampl(gen);
 
     // Generate complex sample using polar coordinates
+    
     /*Computes z = args.amplitude * cos(phase) {real part} + args.amplitude *
     (i) sin(phase) {imaginary part Do note that imaginary part is the coff. of i
     so sin(phase)} If the case of converting to cartesian plane arises the
