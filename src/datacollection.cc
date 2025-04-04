@@ -44,7 +44,7 @@ constexpr float TX_AMPLITUDE_DEFAULT = 0.5f; // Default amplitude for TX signal 
 // ----------------------------------------
 struct Config {
     // USRP Settings
-    std::string usrp_args = "";         // Arguments to find USRP (e.g., "type=b210")
+    std::string usrp_args = "type=b200";         // Arguments to find USRP (e.g., "type=b210")
     double sample_rate = 4e6;           // Sample rate (Sps) - Increased default
     double rx_gain = 50.0;              // RX gain (dB) - Adjusted default
     double tx_gain = 50.0;              // TX gain (dB) - Adjusted default
