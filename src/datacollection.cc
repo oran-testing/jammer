@@ -2,9 +2,9 @@
 #include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/stream.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp> // For simplified signal handling in main
-#include <uhd/utils/msg.hpp>      // For UHD logging control
+//#include <uhd/utils/msg.hpp>      // For UHD logging control
 
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -13,6 +13,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include <fftw3.h>
+//#include <uhd/utils/logging.hpp>
 
 #include <atomic>
 #include <thread>
@@ -482,7 +483,7 @@ public:
 // ----------------------------------------
 void perform_calibration(const Config& cfg, uhd::usrp::multi_usrp::sptr usrp) {
     std::cout << "\nPerforming device calibrations..." << std::endl;
-
+    
     // Loop over channels - assume only channel 0 for now for simplicity
     size_t channel = 0; 
      if (cfg.enable_rx) {
@@ -494,15 +495,15 @@ void perform_calibration(const Config& cfg, uhd::usrp::multi_usrp::sptr usrp) {
              std::cout << "    Performing RX DC offset calibration..." << std::endl;
              usrp->set_rx_dc_offset(true, channel); // Enable automatic DC offset correction
              std::this_thread::sleep_for(1s); // Wait for it to stabilize (heuristic)
-             auto dc_offset = usrp->get_rx_dc_offset(channel);
-              std::cout << "    RX DC Offset calibrated value: " << dc_offset << std::endl;
+             //auto dc_offset = usrp->get_rx_dc_offset(channel);
+             // std::cout << "    RX DC Offset calibrated value: " << dc_offset << std::endl;
 
              // IQ Imbalance Calibration
              std::cout << "    Performing RX IQ imbalance calibration..." << std::endl;
              usrp->set_rx_iq_balance(true, channel); // Enable automatic IQ balance correction
              std::this_thread::sleep_for(1s); // Wait for it to stabilize (heuristic)
-             auto iq_balance = usrp->get_rx_iq_balance(channel);
-             std::cout << "    RX IQ Balance calibrated value: " << iq_balance << std::endl;
+             //auto iq_balance = usrp->get_rx_iq_balance(channel);
+            // std::cout << "    RX IQ Balance calibrated value: " << iq_balance << std::endl;
 
              std::cout << "  RX Calibration for channel " << channel << " complete." << std::endl;
          } catch (const uhd::exception& e) {
@@ -513,14 +514,18 @@ void perform_calibration(const Config& cfg, uhd::usrp::multi_usrp::sptr usrp) {
      }
     
      if (cfg.enable_tx) {
+
         try {
              std::cout << "  Calibrating TX channel " << channel << "..." << std::endl;
              
              // TX IQ Imbalance Calibration (if available)
              // Note: TX DC offset often handled differently or less critical
-              if (usrp->get_tx_sensor_names(channel).has_value()) { // Check if sensors exist
-                 bool has_tx_iq_cal = false;
-                 for(const auto& name : usrp->get_tx_sensor_names(channel).value()) {
+             auto sensor_names = usrp->get_tx_sensor_names(channel);
+             bool has_tx_iq_cal = false;
+
+             if (!sensor_names.empty()) { // Check if any sensors exist
+                 
+                 for (const auto& name : sensor_names) {
                      if (boost::icontains(name, "iq_balance")) { // Look for relevant sensor name
                          has_tx_iq_cal = true;
                          break;
@@ -529,22 +534,31 @@ void perform_calibration(const Config& cfg, uhd::usrp::multi_usrp::sptr usrp) {
 
                  if (has_tx_iq_cal) {
                      std::cout << "    Performing TX IQ imbalance self-calibration..." << std::endl;
-                     usrp->set_tx_iq_balance_enabled(true, channel); // Enable cal if possible
+                     usrp->set_tx_iq_balance(true, channel); // Enable cal if possible
                      std::this_thread::sleep_for(1s);
-                     auto tx_iq_cal_value = usrp->get_tx_iq_balance(channel);
-                     std::cout << "    TX IQ Balance calibrated value: " << tx_iq_cal_value << std::endl;
-                 } else {
+                     //auto tx_iq_cal_value = usrp->get_tx_iq_balance(channel);
+                    // std::cout << "    TX IQ Balance calibrated value: " << tx_iq_cal_value << std::endl;
+                 } 
+                 
+                 else {
                      std::cout << "    TX IQ imbalance self-calibration not detected/supported for this channel." << std::endl;
                  }
-              } else {
+              } 
+              
+              else {
                  std::cout << "    Could not retrieve TX sensor names for channel " << channel << "." << std::endl;
               }
+
               std::cout << "  TX Calibration for channel " << channel << " complete (limited)." << std::endl;
 
-        } catch (const uhd::exception& e) {
+        } 
+        
+        catch (const uhd::exception& e) {
              std::cerr << "Warning: TX calibration failed for channel " << channel << ": " << e.what() << std::endl;
          }
-    } else {
+    } 
+    
+    else {
          std::cout << "  Skipping TX calibration (TX disabled)." << std::endl;
      }
 
@@ -556,7 +570,7 @@ void perform_calibration(const Config& cfg, uhd::usrp::multi_usrp::sptr usrp) {
 // ----------------------------------------
 void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     if (cfg.set_thread_priority) {
-        uhd::utils::set_thread_priority_safe();
+        uhd::set_thread_priority_safe();
     }
 
     std::cout << "RX Thread: Starting." << std::endl;
@@ -750,7 +764,7 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
 // ----------------------------------------
 void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     if (cfg.set_thread_priority) {
-        uhd::utils::set_thread_priority_safe();
+        uhd::set_thread_priority_safe();
     }
 
     std::cout << "TX Thread: Starting." << std::endl;
@@ -834,6 +848,26 @@ void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
 // ----------------------------------------
 // Main Function (using safe_main)
 // ----------------------------------------
+
+
+namespace po = boost::program_options;
+
+// Helper function: Convert string log level to uhd::log::severity_level enum.
+// Note: Adjust the enum member names to match your UHD version.
+uhd::log::severity_level string_to_severity(const std::string& level) {
+    if (level == "debug")
+        return uhd::log::severity_level::debug;
+    else if (level == "info")
+        return uhd::log::severity_level::info;
+    else if (level == "warning")
+        return uhd::log::severity_level::warning;
+    else if (level == "error")
+        return uhd::log::severity_level::error;
+    else
+        throw std::invalid_argument("Invalid log level: " + level);
+}
+
+
 int UHD_SAFE_MAIN(int argc, char* argv[]) {
     // === Configuration ===
     Config cfg;
@@ -885,7 +919,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
 
          // Misc
         ("no-priority", po::bool_switch()->notifier([&](bool v){ if(v) cfg.set_thread_priority = false; }), "Disable setting real-time thread priority")
-        ("log-level", po::value<std::string>()->notifier([](const std::string& level){ uhd::msg::set_log_level(level); }), "Set UHD log level (e.g., 'info', 'warning', 'error')")
+        ("log-level", po::value<std::string>()->notifier([](const std::string& level) {
+            // Convert the string to the proper severity level enum using our helper function.
+            uhd::log::set_log_level(string_to_severity(level));
+        }), "Set UHD log level (e.g., 'info', 'warning', 'error')")
     ;
 
     // Parse command line
@@ -904,7 +941,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
             std::cout << "Loading configuration from: " << config_path << std::endl;
             cfg.load_from_yaml(config_path);
             // Re-parse command line to allow overrides AFTER loading config file
-             po::store(po::parse_command_line(argc, argv, desc), vm);
+            po::store(po::parse_command_line(argc, argv, desc), vm);
         }
 
         po::notify(vm); // Finalize options storage and run notifiers
@@ -912,9 +949,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         // Handle saving config (after potential overrides)
         if (vm.count("save-config")) {
             std::string save_path = vm["save-config"].as<std::string>();
-             std::cout << "Saving current configuration to: " << save_path << std::endl;
-             cfg.save_to_yaml(save_path);
-             return EXIT_SUCCESS;
+            std::cout << "Saving current configuration to: " << save_path << std::endl;
+            cfg.save_to_yaml(save_path);
+            return EXIT_SUCCESS;
         }
 
         // Validate the final configuration
@@ -933,11 +970,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
     std::cout << "--- Configuration Summary ---" << std::endl;
     std::cout << boost::format("USRP Args:        '%s'\n") % cfg.usrp_args;
     std::cout << boost::format("Sample Rate:      %.2f Msps\n") % (cfg.sample_rate / 1e6);
-    std::cout << boost::format("RX Freq Range:    %.2f - %.2f MHz (Step: %.2f MHz)\n") % (cfg.start_freq/1e6) % (cfg.end_freq/1e6) % (cfg.step_freq/1e6);
+    std::cout << boost::format("RX Freq Range:    %.2f - %.2f MHz (Step: %.2f MHz)\n")
+                 % (cfg.start_freq / 1e6) % (cfg.end_freq / 1e6) % (cfg.step_freq / 1e6);
     std::cout << boost::format("RX Gain:          %.1f dB | RX Antenna: %s\n") % cfg.rx_gain % cfg.rx_ant;
-    if(cfg.enable_tx) std::cout << boost::format("TX Freq:          %.2f MHz | TX Gain: %.1f dB | TX Antenna: %s | Wave: %s\n") % (cfg.tx_center_freq / 1e6) % cfg.tx_gain % cfg.tx_ant % cfg.tx_waveform_type;
+    if (cfg.enable_tx)
+        std::cout << boost::format("TX Freq:          %.2f MHz | TX Gain: %.1f dB | TX Antenna: %s | Wave: %s\n")
+                     % (cfg.tx_center_freq / 1e6) % cfg.tx_gain % cfg.tx_ant % cfg.tx_waveform_type;
     std::cout << boost::format("Algorithm:        %s\n") % cfg.algorithm;
-    if(boost::iequals(cfg.algorithm,"fft")) std::cout << boost::format("  FFT Size: %d | Avg: %d | Window: %s | Threshold: %.1f dB | Prominence: %.1f dB\n") % cfg.fft_size % cfg.avg_num % cfg.fft_window_type % cfg.peak_threshold_db % cfg.prominence_threshold_db;
+    if (boost::iequals(cfg.algorithm, "fft"))
+        std::cout << boost::format("  FFT Size: %d | Avg: %d | Window: %s | Threshold: %.1f dB | Prominence: %.1f dB\n")
+                     % cfg.fft_size % cfg.avg_num % cfg.fft_window_type % cfg.peak_threshold_db % cfg.prominence_threshold_db;
     std::cout << "---------------------------\n" << std::endl;
 
     // === USRP Initialization ===
@@ -947,7 +989,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         usrp = uhd::usrp::multi_usrp::make(cfg.usrp_args);
 
         // Lock mboard clocks - essential for phase alignment IF daughterboards share clocks (like B210)
-        if (cfg.clock_rate > 0.0) usrp->set_master_clock_rate(cfg.clock_rate);
+        if (cfg.clock_rate > 0.0)
+            usrp->set_master_clock_rate(cfg.clock_rate);
         usrp->set_clock_source("internal"); // Use internal oscillator
 
         // Set common properties
@@ -963,50 +1006,46 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         double actual_rx_rate = usrp->get_rx_rate(0);
         double actual_tx_rate = usrp->get_tx_rate(0);
         std::cout << "Actual RX Rate: " << actual_rx_rate / 1e6 << " Msps" << std::endl;
-         if (cfg.enable_tx) std::cout << "Actual TX Rate: " << actual_tx_rate / 1e6 << " Msps" << std::endl;
-         if (std::abs(actual_rx_rate - cfg.sample_rate) > 1.0 || (cfg.enable_tx && std::abs(actual_tx_rate - cfg.sample_rate) > 1.0)) {
-             std::cerr << "Warning: Actual sample rate deviates significantly from requested rate!" << std::endl;
-            // Update config rate if desired? Could cause issues downstream if FFT depends on original cfg.rate
-            // cfg.sample_rate = actual_rx_rate; 
-         }
+        if (cfg.enable_tx)
+            std::cout << "Actual TX Rate: " << actual_tx_rate / 1e6 << " Msps" << std::endl;
+        if (std::abs(actual_rx_rate - cfg.sample_rate) > 1.0 ||
+            (cfg.enable_tx && std::abs(actual_tx_rate - cfg.sample_rate) > 1.0)) {
+            std::cerr << "Warning: Actual sample rate deviates significantly from requested rate!" << std::endl;
+            // Optionally update cfg.sample_rate if desired.
+        }
         
-
         // Set Gains
-         if (cfg.enable_rx) {
+        if (cfg.enable_rx) {
             std::cout << "Setting RX Gain: " << cfg.rx_gain << " dB..." << std::endl;
             usrp->set_rx_gain(cfg.rx_gain, 0);
-             std::cout << "Actual RX Gain: " << usrp->get_rx_gain(0) << " dB" << std::endl;
-             std::cout << "Setting RX Antenna: " << cfg.rx_ant << "..." << std::endl;
-             usrp->set_rx_antenna(cfg.rx_ant, 0);
-         }
+            std::cout << "Actual RX Gain: " << usrp->get_rx_gain(0) << " dB" << std::endl;
+            std::cout << "Setting RX Antenna: " << cfg.rx_ant << "..." << std::endl;
+            usrp->set_rx_antenna(cfg.rx_ant, 0);
+        }
         if (cfg.enable_tx) {
-             std::cout << "Setting TX Gain: " << cfg.tx_gain << " dB..." << std::endl;
+            std::cout << "Setting TX Gain: " << cfg.tx_gain << " dB..." << std::endl;
             usrp->set_tx_gain(cfg.tx_gain, 0);
             std::cout << "Actual TX Gain: " << usrp->get_tx_gain(0) << " dB" << std::endl;
             std::cout << "Setting TX Antenna: " << cfg.tx_ant << "..." << std::endl;
             usrp->set_tx_antenna(cfg.tx_ant, 0);
             
             std::cout << "Setting TX Freq: " << cfg.tx_center_freq / 1e6 << " MHz..." << std::endl;
-             usrp->set_tx_freq(uhd::tune_request_t(cfg.tx_center_freq), 0);
-              // Wait for TX LO to lock?
-              std::this_thread::sleep_for(std::chrono::duration<double>(cfg.settling_time)); // Reuse settling time for TX too
-              try {
-                if(!usrp->get_tx_sensor("lo_locked", 0).to_bool()){
+            usrp->set_tx_freq(uhd::tune_request_t(cfg.tx_center_freq), 0);
+            std::this_thread::sleep_for(std::chrono::duration<double>(cfg.settling_time)); // Wait for TX LO lock.
+            try {
+                if (!usrp->get_tx_sensor("lo_locked", 0).to_bool()) {
                     std::cerr << "Warning: TX LO failed to lock!" << std::endl;
-                 }
-              } catch(...){} // Ignore errors if sensor not present
-
+                }
+            } catch (...) { /* Ignore errors if sensor not present */ }
         }
-         if (cfg.enable_rx) {
-             // Set initial RX freq before calibration might help
-             std::cout << "Setting initial RX Freq: " << cfg.start_freq / 1e6 << " MHz..." << std::endl;
-             usrp->set_rx_freq(uhd::tune_request_t(cfg.start_freq), 0);
-             std::this_thread::sleep_for(std::chrono::duration<double>(cfg.settling_time)); // Give it time to settle once initially
-         }
-
+        if (cfg.enable_rx) {
+            std::cout << "Setting initial RX Freq: " << cfg.start_freq / 1e6 << " MHz..." << std::endl;
+            usrp->set_rx_freq(uhd::tune_request_t(cfg.start_freq), 0);
+            std::this_thread::sleep_for(std::chrono::duration<double>(cfg.settling_time));
+        }
 
         // Perform Calibration
-         perform_calibration(cfg, usrp);
+        perform_calibration(cfg, usrp);
 
         std::cout << "USRP Initialization Complete." << std::endl;
 
@@ -1018,52 +1057,37 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-
-    // === Setup Signal Handler ===
-    // Using uhd::utils::interrupt_handler() called internally by safe_main
-    // which sets ::stop_signal_called for us.
-
-
-    // === Start Threads ===
+    // === Setup Signal Handler and Start Threads ===
     std::thread rx_t, tx_t;
     try {
-         if (cfg.enable_rx) {
+        if (cfg.enable_rx) {
             std::cout << "Launching RX thread..." << std::endl;
             rx_t = std::thread(rx_thread, usrp, std::cref(cfg));
-         }
-         if (cfg.enable_tx) {
-             std::cout << "Launching TX thread..." << std::endl;
-             tx_t = std::thread(tx_thread, usrp, std::cref(cfg));
-         }
-     } catch (const std::system_error& e) {
+        }
+        if (cfg.enable_tx) {
+            std::cout << "Launching TX thread..." << std::endl;
+            tx_t = std::thread(tx_thread, usrp, std::cref(cfg));
+        }
+    } catch (const std::system_error& e) {
         std::cerr << "Error launching threads: " << e.what() << " (" << e.code() << ")" << std::endl;
-         stop_signal_called = true; // Signal any running threads to stop
-     } catch (const std::exception& e) {
+        stop_signal_called = true; // Signal any running threads to stop.
+    } catch (const std::exception& e) {
         std::cerr << "Error during thread launch setup: " << e.what() << std::endl;
-         stop_signal_called = true;
-     }
+        stop_signal_called = true;
+    }
 
-
-    // === Wait for Threads (or Ctrl+C) ===
     std::cout << "\nScanner running. Press Ctrl+C to stop." << std::endl;
-
-    // Main thread could potentially do other work here, like periodic reporting
-    // from shared_data, or run a simple UI loop.
-    // For now, just wait for threads to finish after stop signal.
-
     if (rx_t.joinable()) rx_t.join();
     if (tx_t.joinable()) tx_t.join();
 
     std::cout << "\nThreads joined. Exiting." << std::endl;
 
-
     // === Cleanup ===
-     // Save FFTW wisdom if requested
     if (boost::iequals(cfg.algorithm, "fft")) {
         FFTProcessor::save_wisdom(cfg.fft_wisdom_path);
     }
-    // USRP object is automatically released by shared_ptr destructor
-
+    // USRP object automatically released via shared_ptr.
 
     return EXIT_SUCCESS;
 }
+
