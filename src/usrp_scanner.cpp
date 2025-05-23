@@ -29,6 +29,7 @@
 using namespace std::chrono_literals;
 constexpr double PI = boost::math::constants::pi<double>();
 
+// THIS IS THE RX_THREAD FROM YOUR ORIGINAL SINGLE FILE, MINIMALLY ADAPTED
 void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     if (cfg.set_thread_priority) {
         uhd::set_thread_priority_safe();
@@ -47,7 +48,7 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
         }
     } catch (const std::exception& e) {
         std::cerr << "RX Thread: Error initializing processor: " << e.what() << std::endl;
-        stop_signal_called = true;
+        stop_signal_called = true; // Ensure other things stop
         return;
     }
 
@@ -65,16 +66,17 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     std::vector<std::complex<float>> fft_input_buffer(cfg.fft_size);
 
     std::chrono::steady_clock::time_point last_report_time = std::chrono::steady_clock::now();
-    long total_peaks_detected_session = 0;
+    long total_peaks_detected_session = 0; // Renamed from total_peaks_detected for clarity
 
     std::cout << "RX Thread: Starting frequency sweep..." << std::endl;
 
     while (!stop_signal_called) {
-        {
+        { // Scope for shared_data lock
             std::lock_guard<std::mutex> lock(shared_data.mtx);
             shared_data.current_sweep_peaks.clear();
-            shared_data.sweep_complete = false;
+            shared_data.sweep_complete = false; // Mark sweep as starting
         }
+
 
         for (double current_freq = cfg.start_freq;
              current_freq <= cfg.end_freq && !stop_signal_called;
@@ -101,26 +103,26 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
                std::cerr << "Warning: Error checking RX LO lock status: " << e.what() << std::endl;
             }
 
-             processor->reset();
+             processor->reset(); // Resets FFTProcessor's internal current_avg_count to 0
              samples_collected_for_fft = 0;
 
-             bool processing_at_this_freq_done = false;
-             while (!processing_at_this_freq_done && !stop_signal_called) {
+             bool averaging_complete = false; // Flag for current frequency's processing
+             while (!averaging_complete && !stop_signal_called) { // Loop for this frequency until averaging_complete is true
                  size_t num_rx_samps = rx_stream->recv(rx_buffer.data(), rx_buffer.size(), md, 0.1);
 
                  if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
                      std::cerr << "RX Error at " << current_freq / 1e6 << " MHz: " << md.strerror() << std::endl;
-                     break;
+                     break; // Break from inner while (!averaging_complete), effectively moving to next freq if error
                  }
                  if (num_rx_samps == 0) {
                     if (!stop_signal_called) {
                         std::cerr << "Warning: RX receive timeout at " << current_freq / 1e6 << " MHz." << std::endl;
                     }
-                    continue;
+                    continue; // Try receiving again for this frequency
                  }
 
                 size_t current_pos_in_block = 0;
-                 while (current_pos_in_block < num_rx_samps && !processing_at_this_freq_done) {
+                 while (current_pos_in_block < num_rx_samps && !averaging_complete && !stop_signal_called) { // Process this block
                     size_t remaining_in_block = num_rx_samps - current_pos_in_block;
                     size_t needed_for_fft = cfg.fft_size - samples_collected_for_fft;
                     size_t samples_to_copy = std::min(remaining_in_block, needed_for_fft);
@@ -133,53 +135,50 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
                     current_pos_in_block += samples_to_copy;
 
                     if (samples_collected_for_fft == cfg.fft_size) {
+                        // FFTProcessor's process_block will internally count up to cfg.avg_num
+                        // and return {} if not yet done, or peaks (possibly empty) if done.
                         auto peaks = processor->process_block(fft_input_buffer);
-                        samples_collected_for_fft = 0;
+                        samples_collected_for_fft = 0; // Reset for next FFT input
 
-                        bool avg_cycle_completed_by_processor = false;
-                        if (cfg.algorithm == "fft") {
-                            avg_cycle_completed_by_processor = true;
-                        } else if (cfg.algorithm == "ml") {
-                            avg_cycle_completed_by_processor = true;
-                        }
+                         if (!peaks.empty()) { // ORIGINAL LOGIC: only complete if peaks are found
+                             averaging_complete = true; // Mark this frequency's processing as done
 
-                        if (avg_cycle_completed_by_processor) {
-                            processing_at_this_freq_done = true;
+                            if (cfg.verbose) std::cout << "  Peaks found at " << current_freq / 1e6 << " MHz: " << peaks.size() << std::endl;
 
-                            if (!peaks.empty()) {
-                                if (cfg.verbose) std::cout << "  Peaks found at " << current_freq / 1e6 << " MHz: " << peaks.size() << std::endl;
-                                {
-                                    std::lock_guard<std::mutex> lock(shared_data.mtx);
-                                    for (const auto& [offset, power] : peaks) {
-                                        double absolute_freq = current_freq + offset;
-                                        if (absolute_freq >= cfg.start_freq && absolute_freq <= cfg.end_freq) {
-                                            shared_data.current_sweep_peaks.push_back({absolute_freq, power, current_freq});
-                                            total_peaks_detected_session++;
-                                            if (cfg.verbose) printf("    -> Peak: %.3f MHz (Power: %.2f dB)\n", absolute_freq / 1e6, power);
-                                        }
+                            { // Scope for shared_data lock
+                                 std::lock_guard<std::mutex> lock(shared_data.mtx);
+                                for (const auto& [offset, power] : peaks) {
+                                     double absolute_freq = current_freq + offset;
+                                     if (absolute_freq >= cfg.start_freq && absolute_freq <= cfg.end_freq) {
+                                         shared_data.current_sweep_peaks.push_back({absolute_freq, power, current_freq});
+                                         total_peaks_detected_session++; // Use session counter
+                                         if (cfg.verbose) printf("    -> Peak: %.3f MHz (Power: %.2f dB)\n", absolute_freq / 1e6, power);
                                     }
-                                }
-                            } else {
-                                if (cfg.verbose && cfg.algorithm == "fft") {
-                                     std::cout << "  FFT averaging complete at " << current_freq / 1e6 << " MHz, no significant peaks." << std::endl;
-                                } else if (cfg.verbose && cfg.algorithm == "ml") {
-                                     std::cout << "  ML processing complete at " << current_freq / 1e6 << " MHz, no peaks returned." << std::endl;
-                                }
+                                 }
                             }
-                        }
+                             // No explicit break here, `averaging_complete = true` will exit the outer `while(!averaging_complete)`
+                         }
+                         // If peaks.empty(), averaging_complete remains false.
+                         // The `while(!averaging_complete)` loop continues for THIS frequency.
+                         // FFTProcessor has its `current_avg_count` reset by its `process_block`
+                         // after it completes cfg.avg_num internal averages. So it will start a new
+                         // set of cfg.avg_num averages if called again.
                      }
-                 }
-             }
-             if (stop_signal_called) break;
-         }
+                 } // end while (current_pos_in_block < num_rx_samps ...)
+             } // end while (!averaging_complete && !stop_signal_called)
+             if (stop_signal_called) break; // Break from the main frequency scanning loop
+         } // end for (current_freq loop)
 
-        {
+        { // Scope for shared_data lock
             std::lock_guard<std::mutex> lock(shared_data.mtx);
-            shared_data.sweep_complete = true;
+            shared_data.sweep_complete = true; // Mark sweep as finished
         }
+
 
          auto now = std::chrono::steady_clock::now();
          auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_report_time);
+        // Original code had `(elapsed >= 1000ms || stop_signal_called) && !stop_signal_called`
+        // Let's stick to that to avoid report on the very last interrupted moment if not desired.
         if ((elapsed >= 1000ms || (stop_signal_called && !shared_data.current_sweep_peaks.empty())) && !stop_signal_called.load()) {
             std::lock_guard<std::mutex> lock(shared_data.mtx);
             std::cout << "\n--- Sweep Report (" << elapsed.count() << "ms) ---" << std::endl;
@@ -200,9 +199,9 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
          }
 
         if (!stop_signal_called) {
-             std::this_thread::sleep_for(10ms);
+             std::this_thread::sleep_for(10ms); // Yield before next sweep or check
         }
-     }
+     } // end while (!stop_signal_called) loop for overall operation
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
@@ -210,6 +209,7 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     std::cout << "RX Thread: Stopped. Total peaks detected across all sweeps this session: " << total_peaks_detected_session << std::endl;
 }
 
+// --- TX Thread (should be identical to your original or the refactored one if it was correct) ---
 void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     if (cfg.set_thread_priority) {
         uhd::set_thread_priority_safe();
@@ -234,7 +234,7 @@ void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     if (spb > 16384 || spb == 0) spb = (spb == 0) ? 1024: 16384;
     std::vector<std::complex<float>> tx_buffer(spb);
 
-    double current_phase = 0.0;
+    double current_phase_tx = 0.0; // Renamed to avoid conflict if tx_thread from original was different
 
      if (boost::iequals(cfg.tx_waveform_type, "tone")) {
         std::cout << "TX Thread: Generating single tone at offset " << cfg.tx_tone_freq_offset / 1e3 << " kHz." << std::endl;
@@ -258,12 +258,14 @@ void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
 
     while (!stop_signal_called) {
         if (boost::iequals(cfg.tx_waveform_type, "tone")) {
+
+
             double delta_phase = 2.0 * PI * cfg.tx_tone_freq_offset / cfg.sample_rate;
             for (size_t i = 0; i < spb; ++i) {
-                tx_buffer[i] = std::polar(cfg.tx_amplitude, static_cast<float>(current_phase));
-                current_phase += delta_phase;
-                while (current_phase >= 2.0 * PI) current_phase -= 2.0 * PI;
-                while (current_phase < 0.0) current_phase += 2.0 * PI;
+                tx_buffer[i] = std::polar(cfg.tx_amplitude, static_cast<float>(current_phase_tx));
+                current_phase_tx += delta_phase;
+                while (current_phase_tx >= 2.0 * PI) current_phase_tx -= 2.0 * PI;
+                while (current_phase_tx < 0.0) current_phase_tx += 2.0 * PI;
             }
         } else if (boost::iequals(cfg.tx_waveform_type, "noise")) {
             for(size_t i=0; i<spb; ++i){
@@ -274,7 +276,7 @@ void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
         }
 
         size_t num_sent = tx_stream->send(tx_buffer.data(), tx_buffer.size(), md, 0.1);
-        
+
         if (num_sent < tx_buffer.size() && !stop_signal_called) {
             std::cerr << "TX Warning: Send incomplete or potential underrun. Sent " << num_sent << "/" << tx_buffer.size() << std::endl;
         } else if (num_sent == 0 && !stop_signal_called) {
