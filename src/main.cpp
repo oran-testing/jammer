@@ -29,11 +29,36 @@ using namespace std::chrono_literals;
 int UHD_SAFE_MAIN(int argc, char* argv[]) {
     Config cfg; // Default config
 
-    // --- Command Line Options ---
+    // --- Stage 1: Preliminary parse for config file path ---
+    po::options_description config_file_options("Config File Options");
+    config_file_options.add_options()
+        ("config,c", po::value<std::string>(), "Load configuration from YAML file");
+
+    po::variables_map vm_prelim;
+    try {
+        po::store(po::command_line_parser(argc, argv).options(config_file_options).allow_unregistered().run(), vm_prelim);
+        po::notify(vm_prelim); 
+
+        if (vm_prelim.count("config")) {
+            std::string config_path = vm_prelim["config"].as<std::string>();
+            std::cout << "Loading configuration from: " << config_path << std::endl;
+            cfg.load_from_yaml(config_path); 
+        }
+    } catch (const po::error &e) {
+        std::cerr << "Command Line Error (preliminary parse): " << e.what() << std::endl;
+        std::cerr << config_file_options << std::endl;
+        return EXIT_FAILURE;
+    } catch (const std::exception& e) {
+        std::cerr << "Configuration Error (loading YAML): " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // --- Stage 2: Full Command Line Options Processing ---
     po::options_description desc("Advanced USRP Spectrum Scanner Options");
     desc.add_options()
         ("help,h", "Show help message")
-        ("config,c", po::value<std::string>(), "Load configuration from YAML file")
+        // Re-add "config" for help message, but its primary loading is done
+        ("config,c", po::value<std::string>(), "Load configuration from YAML file (processed if specified)")
         ("save-config", po::value<std::string>(), "Save current configuration to YAML file and exit")
         ("verbose,v", po::bool_switch(&cfg.verbose)->default_value(cfg.verbose), "Enable verbose output")
 
@@ -85,8 +110,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         }), "Set UHD log level ('trace', 'debug', 'info', 'warning', 'error', 'fatal')")
     ;
 
-    po::variables_map vm;
+    po::variables_map vm; // Use this vm for the main parsing stage
     try {
+        // Parse all command line arguments.
+        // default_value() will now use cfg members which might have been updated by YAML.
         po::store(po::parse_command_line(argc, argv, desc), vm);
 
         if (vm.count("help")) {
@@ -94,20 +121,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
             return EXIT_SUCCESS;
         }
 
-        if (vm.count("config")) {
-            std::string config_path = vm["config"].as<std::string>();
-            std::cout << "Loading configuration from: " << config_path << std::endl;
-            cfg.load_from_yaml(config_path);
-            // Re-parse command line AFTER loading config to allow command line to override YAML
-            po::store(po::parse_command_line(argc, argv, desc), vm); // Overwrite cfg members again
-        }
+        // The old conditional "config" loading and second po::store is removed.
+        // cfg.load_from_yaml has already happened if --config was given in stage 1.
 
-        po::notify(vm); // This will run notifiers and update cfg members
+        po::notify(vm); // Apply command-line overrides to cfg.
+                        // If an option was not on cmd line, its value in cfg (from YAML or initial default) remains.
 
         if (vm.count("save-config")) {
             std::string save_path = vm["save-config"].as<std::string>();
             std::cout << "Saving current configuration to: " << save_path << std::endl;
-            // cfg already reflects command-line args due to notify()
             cfg.save_to_yaml(save_path);
             return EXIT_SUCCESS;
         }
@@ -272,18 +294,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
 
     if (!rx_thread_started && !tx_thread_started && (cfg.enable_rx || cfg.enable_tx)) {
          std::cerr << "Failed to start any worker threads. Exiting." << std::endl;
-         // Ensure USRP object is released if threads didn't take ownership or run
-         // (unique_ptr/sptr handles this, but good to be mindful)
          return EXIT_FAILURE;
     }
 
 
     std::cout << "\nScanner running. Press Ctrl+C to stop." << std::endl;
 
-    // Main loop: wait for stop_signal_called (set by UHD_SAFE_MAIN on Ctrl+C)
     while(not stop_signal_called.load()){
         std::this_thread::sleep_for(100ms);
-        // Can add periodic status updates here if desired, independent of RX thread reports
     }
 
     std::cout << "\nCtrl+C detected or stop signal received. Shutting down..." << std::endl;
@@ -306,8 +324,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
     if (cfg.enable_rx && boost::iequals(cfg.algorithm, "fft") && !cfg.fft_wisdom_path.empty()) {
         FFTProcessor::save_wisdom(cfg.fft_wisdom_path);
     }
-
-    // USRP object (sptr) will be automatically released.
 
     std::cout << "Exiting gracefully." << std::endl;
     return EXIT_SUCCESS;

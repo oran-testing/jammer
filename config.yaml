@@ -38,3 +38,5 @@ ml_model_path: ""            # Path to ML model file (if algorithm is "ml")
 fft_wisdom_path: "fftw_wisdom.dat" # Path for FFTW wisdom file (load/save for faster FFT init)
 set_thread_priority: true    # Set real-time thread priority for RX/TX threads (true or false)
 verbose: false               # Enable verbose output (true or false)
+
+#
