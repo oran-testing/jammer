@@ -177,8 +177,8 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
 
          auto now = std::chrono::steady_clock::now();
          auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_report_time);
-        // Original code had `(elapsed >= 1000ms || stop_signal_called) && !stop_signal_called`
-        // Let's stick to that to avoid report on the very last interrupted moment if not desired.
+
+
         if ((elapsed >= 1000ms || (stop_signal_called && !shared_data.current_sweep_peaks.empty())) && !stop_signal_called.load()) {
             std::lock_guard<std::mutex> lock(shared_data.mtx);
             std::cout << "\n--- Sweep Report (" << elapsed.count() << "ms) ---" << std::endl;
@@ -209,7 +209,7 @@ void rx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     std::cout << "RX Thread: Stopped. Total peaks detected across all sweeps this session: " << total_peaks_detected_session << std::endl;
 }
 
-// --- TX Thread (should be identical to your original or the refactored one if it was correct) ---
+// --- TX Thread ---
 void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const Config& cfg) {
     if (cfg.set_thread_priority) {
         uhd::set_thread_priority_safe();

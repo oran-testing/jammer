@@ -1,3 +1,5 @@
+#Currently the executable builds with the config file. So you'll need to rebuild if you change anything in the config file for it to take effect. I'll fix that soon. 
+
 cmake_minimum_required(VERSION 3.14)
 project(USRPAdvancedScanner LANGUAGES CXX)
 

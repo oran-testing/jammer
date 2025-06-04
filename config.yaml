@@ -1,6 +1,6 @@
 # USRP Settings
 usrp_args: "type=b200"       # UHD device arguments (e.g., "type=b210", "addr=192.168.10.2")
-sample_rate: 2000000.0       # Sample rate in Samples per second (e.g., 1e6 for 1 Msps)
+sample_rate: 20000000       # Sample rate in Samples per second (e.g., 1e6 for 1 Msps)
 rx_gain: 30.0                # RX gain in dB
 tx_gain: 30.0                # TX gain in dB
 tx_center_freq: 915000000.0  # TX center frequency in Hz (e.g., 915e6 for 915 MHz)
@@ -12,17 +12,17 @@ clock_rate: 0.0              # Optional master clock rate in Hz (0.0 for device 
 # Scanning Parameters (for RX)
 start_freq: 800000000.0      # Scan start frequency in Hz (e.g., 2.4e9 for 2.4 GHz)
 end_freq: 1000000000.0       # Scan end frequency in Hz (e.g., 2.5e9 for 2.5 GHz)
-step_freq: 1000000.0         # Scan frequency step in Hz (e.g., 1e6 for 1 MHz)
+step_freq: 25000000.0         # Scan frequency step in Hz (e.g., 1e6 for 1 MHz)
 settling_time: 0.01          # RX/TX tune settling time in seconds (e.g., 0.05 for 50ms)
 
 # Processing Parameters (primarily for FFT algorithm)
 algorithm: "fft"             # Processing algorithm: "fft" or "ml"
-fft_size: 2048               # FFT size in points (must be power of 2 for some FFTW optimizations)
+fft_size: 1024             # FFT size in points (must be power of 2 for some FFTW optimizations)
 avg_num: 5                   # Number of PSDs to average for FFT algorithm
 fft_window_type: "hann"      # FFT window: "none", "hann", "hamming", "blackmanharris"
 peak_threshold_db: -70.0     # Peak detection threshold in dB relative to full scale (after FFT & avg)
 prominence_threshold_db: 6.0 # Peak prominence threshold in dB (how much peak stands out from neighbors)
-num_samples_block: 16384     # RX receive block size in samples (should be >= fft_size)
+num_samples_block: 4096     # RX receive block size in samples (should be >= fft_size)
 
 # Transmission Parameters
 enable_tx: false             # Enable transmitter (true or false)
