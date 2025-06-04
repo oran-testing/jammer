@@ -1,7 +1,7 @@
 # Jammer
 
 A configurable signal jamming tool for testing and development purposes. This project provides a simple CLI-based interface to simulate jamming behavior, useful for controlled testing environments. 
-The jammer generates random noise over the given central frequency and bandwidth in the config file. 
+The jammer generates random noise over the given central frequency and bandwidth. You can change the config parameters in the config file (basic_jammer.yaml). 
 
 ---
 
