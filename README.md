@@ -39,7 +39,7 @@ After successfully building the project, you can run the jammer using a configur
 
 ### Configuration
 
-- The jammer uses YAML configuration files to define parameters such as signal types, frequency ranges, timing, etc.
+- The jammer uses YAML configuration files to define parameters such as central frequency, bandwidth, gain, etc.
 - You can modify the parameters in `configs/basic_jammer.yaml` to suit your specific use case.
 
 ---
