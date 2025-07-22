@@ -1,15 +1,34 @@
 #include "args.h"
 #include <string>
 
+#define REQUIRE_FIELD(node, key)                                               \
+  if (!node[#key]) {                                                           \
+    throw std::runtime_error("Missing required field in config: '" #key "'");  \
+  }
+
 all_args_t parseConfig(
     const std::string &filename) { // change the filename to the real filename
 
   YAML::Node config =
       YAML::LoadFile(filename); // change the filename to its real filename
 
+  REQUIRE_FIELD(config, amplitude);
+  REQUIRE_FIELD(config, num_samples);
+  REQUIRE_FIELD(config, amplitude_width);
+  REQUIRE_FIELD(config, center_frequency);
+  REQUIRE_FIELD(config, bandwidth);
+  REQUIRE_FIELD(config, initial_phase);
+  REQUIRE_FIELD(config, sampling_freq);
+  REQUIRE_FIELD(config, output_iq_file);
+  REQUIRE_FIELD(config, output_csv_file);
+  REQUIRE_FIELD(config, write_iq);
+  REQUIRE_FIELD(config, write_csv);
+  REQUIRE_FIELD(config, device_args);
+  REQUIRE_FIELD(config, tx_gain);
+
   all_args_t args; // an instance of struct
   args.amplitude = config["amplitude"].as<float>();
-  args.num_samples= config["num_samples"].as<size_t>();
+  args.num_samples = config["num_samples"].as<size_t>();
   args.amplitude_width = config["amplitude_width"].as<float>();
   args.center_frequency = config["center_frequency"].as<float>();
   args.initial_phase = config["bandwidth"].as<float>();
