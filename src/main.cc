@@ -16,7 +16,7 @@
 
 void handle_uhd_error(uhd_error err) {
   if (err != UHD_ERROR_NONE) {
-    fprintf(stderr, "UHD ERROR: %d", UHD_ERROR_NONE);
+    fprintf(stderr, "UHD ERROR: %s\n", strerror(err));
     exit(EXIT_FAILURE);
   }
 }
