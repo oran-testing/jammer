@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <iostream>
 
+#include "autoconfig.h"
 #include "args.h"
 #include "noise.h"
 #include "rf.h"
@@ -74,8 +75,28 @@ int main(int argc, char *argv[]) {
   // Load config from YAML
   all_args_t args = parseConfig(config_file);
 
+  // pull data from influx db if the autoconfig is true
+
+  if (args.enable_autoconfigure)
+  {
+     if(!applyInfluxAutoconfig(args))
+     {
+        fprintf(stderr, "Autoconfig from InfluxDB failed\n");
+	return EXIT_FAILURE;
+     }
+  }
+
+
   // Override config with any command-line arguments provided
   overrideConfig(args, argc, argv);
+
+
+  // Validate that RF fields were provided (either from YAML or autoconfig)
+  if (args.center_frequency == 0.0f || args.sampling_freq == 0.0f || args.rf.tx_gain == 0.0f) {
+    fprintf(stderr, "Error: center_frequency, sampling_freq, and tx_gain must be set "
+                    "(either in YAML or via autoconfig)\n");
+    return EXIT_FAILURE;
+  }
 
   // Generate the complex sine wave
   auto samples = generateComplexSineWave(args);

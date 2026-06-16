@@ -15,31 +15,58 @@ all_args_t parseConfig(
   REQUIRE_FIELD(config, amplitude);
   REQUIRE_FIELD(config, num_samples);
   REQUIRE_FIELD(config, amplitude_width);
-  REQUIRE_FIELD(config, center_frequency);
+ // REQUIRE_FIELD(config, center_frequency);
   REQUIRE_FIELD(config, bandwidth);
   REQUIRE_FIELD(config, initial_phase);
-  REQUIRE_FIELD(config, sampling_freq);
+ // REQUIRE_FIELD(config, sampling_freq);
   REQUIRE_FIELD(config, output_iq_file);
   REQUIRE_FIELD(config, output_csv_file);
   REQUIRE_FIELD(config, write_iq);
   REQUIRE_FIELD(config, write_csv);
   REQUIRE_FIELD(config, device_args);
-  REQUIRE_FIELD(config, tx_gain);
+ // REQUIRE_FIELD(config, tx_gain);
 
   all_args_t args; // an instance of struct
   args.amplitude        = config["amplitude"].as<float>();
   args.num_samples      = config["num_samples"].as<size_t>();
   args.amplitude_width  = config["amplitude_width"].as<float>();
-  args.center_frequency = config["center_frequency"].as<float>();
+ // args.center_frequency = config["center_frequency"].as<float>();
   args.bandwidth        = config["bandwidth"].as<float>();
   args.initial_phase    = config["initial_phase"].as<float>();
-  args.sampling_freq    = config["sampling_freq"].as<float>();
+ // args.sampling_freq    = config["sampling_freq"].as<float>();
   args.output_iq_file   = config["output_iq_file"].as<std::string>();
   args.output_csv_file  = config["output_csv_file"].as<std::string>();
   args.write_iq         = config["write_iq"].as<bool>();
   args.write_csv        = config["write_csv"].as<bool>();
   args.rf.device_args   = config["device_args"].as<std::string>();
-  args.rf.tx_gain       = config["tx_gain"].as<float>();
+ // args.rf.tx_gain       = config["tx_gain"].as<float>();
+
+
+  // These three are optional — autoconfig will supply them if enable_autoconfigure is true
+  args.center_frequency = config["center_frequency"] ? config["center_frequency"].as<float>() : 0.0f;
+  args.sampling_freq    = config["sampling_freq"]    ? config["sampling_freq"].as<float>()    : 0.0f;
+  args.rf.tx_gain       = config["tx_gain"]          ? config["tx_gain"].as<float>()          : 0.0f;
+//  
+
+  // autoconfig field
+  args.enable_autoconfigure = false;
+  if (config["enable_autoconfigure"]) {
+	  args.enable_autoconfigure = config["enable_autoconfigure"].as<bool>();
+  }
+  if (config["database"]){
+	YAML::Node db = config["database"];
+	if (db["host"]) args.db.host = db["host"].as<std::string>();
+	
+	if (db["port"]) args.db.port = db["port"].as<uint32_t>();
+	
+	if (db["org"]) args.db.org = db["org"].as<std::string>();
+
+	if (db["token"]) args.db.token = db["token"].as<std::string>();
+
+	if (db["bucket"]) args.db.bucket = db["bucket"].as<std::string>();
+
+	if (db["data_id"]) args.db.data_id = db["data_id"].as<std::string>();
+  } 
   return args;
 }
 
@@ -77,6 +104,9 @@ void overrideConfig(all_args_t &args, int argc, char *argv[]) {
       ++i;
     } else if (std::strcmp(argv[i], "--tx_gain") == 0 && i + 1 < argc) {
       args.rf.tx_gain = std::stof(argv[++i]);
+	
+    } else if (std::strcmp(argv[i], "--enable_autoconfigure") == 0 && i + 1 < argc) {
+      args.enable_autoconfigure = (std::string(argv[++i]) == "true");
     } else {
       std::cerr << "Unknown or incomplete option: " << argv[i] << std::endl;
     }
