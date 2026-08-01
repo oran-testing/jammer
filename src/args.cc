@@ -1,10 +1,37 @@
 #include "args.h"
+#include <stdexcept>
 #include <string>
 
 #define REQUIRE_FIELD(node, key)                                               \
   if (!node[#key]) {                                                           \
     throw std::runtime_error("Missing required field in config: '" #key "'");  \
   }
+
+attack_type_t parseAttackType(const std::string &type) {
+  if (type == "barrage") {
+    return attack_type_t::BARRAGE;
+  }
+  if (type == "constant") {
+    return attack_type_t::CONSTANT;
+  }
+  if (type == "random") {
+    return attack_type_t::RANDOM;
+  }
+  throw std::runtime_error("Unknown attack_type: '" + type +
+                           "' (expected barrage, constant, or random)");
+}
+
+const char *attackTypeToString(attack_type_t type) {
+  switch (type) {
+  case attack_type_t::BARRAGE:
+    return "barrage";
+  case attack_type_t::CONSTANT:
+    return "constant";
+  case attack_type_t::RANDOM:
+    return "random";
+  }
+  return "unknown";
+}
 
 all_args_t parseConfig(
     const std::string &filename) { // change the filename to the real filename
@@ -46,7 +73,36 @@ all_args_t parseConfig(
   args.center_frequency = config["center_frequency"] ? config["center_frequency"].as<float>() : 0.0f;
   args.sampling_freq    = config["sampling_freq"]    ? config["sampling_freq"].as<float>()    : 0.0f;
   args.rf.tx_gain       = config["tx_gain"]          ? config["tx_gain"].as<float>()          : 0.0f;
-//  
+
+  args.attack_type = attack_type_t::BARRAGE;
+  if (config["attack_type"]) {
+    args.attack_type = parseAttackType(config["attack_type"].as<std::string>());
+  }
+
+  args.tone_offset_hz = 0.0f;
+  if (config["tone_offset_hz"]) {
+    args.tone_offset_hz = config["tone_offset_hz"].as<float>();
+  }
+
+  args.burst_duration_ms = 50.0f;
+  if (config["burst_duration_ms"]) {
+    args.burst_duration_ms = config["burst_duration_ms"].as<float>();
+  }
+
+  args.idle_duration_ms = 50.0f;
+  if (config["idle_duration_ms"]) {
+    args.idle_duration_ms = config["idle_duration_ms"].as<float>();
+  }
+
+  args.jam_bandwidth_hz = 5.0e6f;
+  if (config["jam_bandwidth_hz"]) {
+    args.jam_bandwidth_hz = config["jam_bandwidth_hz"].as<float>();
+  }
+
+  args.num_tones = 64;
+  if (config["num_tones"]) {
+    args.num_tones = config["num_tones"].as<int>();
+  }
 
   // autoconfig field
   args.enable_autoconfigure = false;
@@ -107,8 +163,34 @@ void overrideConfig(all_args_t &args, int argc, char *argv[]) {
 	
     } else if (std::strcmp(argv[i], "--enable_autoconfigure") == 0 && i + 1 < argc) {
       args.enable_autoconfigure = (std::string(argv[++i]) == "true");
+    } else if (std::strcmp(argv[i], "--attack_type") == 0 && i + 1 < argc) {
+      args.attack_type = parseAttackType(argv[++i]);
+    } else if (std::strcmp(argv[i], "--tone_offset_hz") == 0 && i + 1 < argc) {
+      args.tone_offset_hz = std::atof(argv[++i]);
+    } else if (std::strcmp(argv[i], "--burst_duration_ms") == 0 && i + 1 < argc) {
+      args.burst_duration_ms = std::atof(argv[++i]);
+    } else if (std::strcmp(argv[i], "--idle_duration_ms") == 0 && i + 1 < argc) {
+      args.idle_duration_ms = std::atof(argv[++i]);
+    } else if (std::strcmp(argv[i], "--jam_bandwidth_hz") == 0 && i + 1 < argc) {
+      args.jam_bandwidth_hz = std::atof(argv[++i]);
+    } else if (std::strcmp(argv[i], "--num_tones") == 0 && i + 1 < argc) {
+      args.num_tones = std::atoi(argv[++i]);
     } else {
       std::cerr << "Unknown or incomplete option: " << argv[i] << std::endl;
     }
+  }
+}
+
+void validateAttackArgs(const all_args_t &args) {
+  if (args.attack_type != attack_type_t::RANDOM) {
+    return;
+  }
+
+  if (args.burst_duration_ms <= 0.0f) {
+    throw std::runtime_error(
+        "burst_duration_ms must be > 0 for random jamming");
+  }
+  if (args.idle_duration_ms <= 0.0f) {
+    throw std::runtime_error("idle_duration_ms must be > 0 for random jamming");
   }
 }

@@ -1,0 +1,42 @@
+attack_type: constant
+
+# Narrowband Gaussian-noise jammer (v3).
+#
+# Tuned per published 5G NR jamming experiments at 23.04 MS/s:
+#   STORM (CEUR 2025) used 1.92 MHz of white noise at ±1.92 MHz offset
+#   from the SSB center with tx_gain in the 60–80 dB range on a B210.
+#   Antosik (IEEE 2024) measured ~25 dB power-efficiency gain for
+#   narrowband over barrage jamming when the waveform is true noise.
+
+amplitude: 0.6
+amplitude_width: 0.05
+
+# Baseband offset from LO. 0 = auto-shift to +1.92 MHz to avoid the NR DC
+# subcarrier and the B-series DC-offset cancellation null. Try ±1.92 MHz,
+# ±3.84 MHz, or any value within ±10 MHz to target different PRB regions.
+tone_offset_hz: 0
+
+# Width of the noise band in Hz. 1.92 MHz matches the STORM SSB-attack
+# bandwidth; up to ~5 MHz is reasonable. Narrower = more power per
+# subcarrier and more "narrowband gain".
+jam_bandwidth_hz: 1.92e6
+
+# Legacy fields used by older constant generators; ignored by v3 but kept
+# for YAML compatibility.
+num_tones: 64
+
+center_frequency: 1842050000
+bandwidth: 40e6
+initial_phase: 0
+sampling_freq: 23.04e6
+num_samples: 23040     # 1 ms of waveform at 23.04 MS/s; buffer is re-streamed
+output_iq_file: "output.fc32"
+output_csv_file: "output.csv"
+write_iq: false
+write_csv: true
+device_args: "type=b200"
+
+# Recommended starting point. Barrage works well around 50; narrowband
+# noise with the correct waveform should produce moderate degradation
+# at 45–55. If KPIs still look clean, raise in steps of 2 dB.
+tx_gain: 50

@@ -1,0 +1,16 @@
+attack_type: random
+burst_duration_ms: 50
+idle_duration_ms: 50
+amplitude: 0.7
+amplitude_width: 0.05
+center_frequency: 1842050000
+bandwidth: 40e6
+initial_phase: 0
+sampling_freq: 23.04e6
+num_samples: 20000
+output_iq_file: "output.fc32"
+output_csv_file: "output.csv"
+write_iq: false
+write_csv: true
+device_args: "type=b200"
+tx_gain: 50
